@@ -170,7 +170,7 @@ def init_db() -> None:
             """
         )
 
-        existing = db.execute("SELECT COUNT(1) AS c FROM plans;").fetchone()["c"]
+        existing = db.execute("SELECT COUNT(1) AS c FROM plans;").fetchone()[0]
         if existing == 0:
             now = _utcnow_iso()
             for plan in DEFAULT_PLANS:
