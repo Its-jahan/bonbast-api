@@ -19,7 +19,8 @@ services:
 
   frontend:
     container_name: bonbast-frontend
-    build: ./frontend
+    build:
+      context: "./Front-end new"
     restart: always
     ports:
       - "80:80"

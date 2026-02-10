@@ -2,7 +2,7 @@
 
 این پروژه دو سرویس دارد:
 - `api` (Flask + Selenium) برای اسکرپ نرخ‌ها
-- `frontend` (React/Vite + Nginx) برای نمایش نرخ‌ها و مدیریت API Key
+- `frontend` (React/Vite + Nginx) برای وب‌سایت و نمایش نرخ‌ها (از فولدر `Front-end new`)
 
 ## اجرا با Docker
 
@@ -38,4 +38,3 @@ docker-compose up -d --build
 اگر می‌خواهید self-host کنید، فایل‌ها را در این مسیرها قرار دهید:
 - `frontend/public/fonts/IranYekanX-Regular.woff2`
 - `frontend/public/fonts/IranYekanX-Bold.woff2`
-

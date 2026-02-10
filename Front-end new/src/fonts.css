@@ -1,0 +1,22 @@
+@font-face {
+  font-family: 'IRANYekanX';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/IranYekanX-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IRANYekanX';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/IranYekanX-Bold.woff2') format('woff2');
+}
+
+:root,
+:host {
+  --font-sans: 'IRANYekanX', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --default-font-family: var(--font-sans);
+}
+
