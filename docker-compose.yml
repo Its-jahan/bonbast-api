@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: bonbast-api
+    build: .
+    ports:
+      - "5050:5000"
+    restart: always
+    # تنظیمات کروم برای جلوگیری از کرش کردن
+    shm_size: '2gb' 
+    environment:
+      - CHROME_BIN=/usr/bin/chromium
+      - CHROMEDRIVER_PATH=/usr/bin/chromedriver
