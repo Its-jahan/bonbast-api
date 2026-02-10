@@ -115,7 +115,7 @@ function App() {
   useEffect(() => {
     const fetchPrices = async () => {
       try {
-        const response = await axios.get('/api/prices');
+const response = await axios.get('/prices');
         
         if (response.data && response.data.data) {
             setPrices(response.data.data);
