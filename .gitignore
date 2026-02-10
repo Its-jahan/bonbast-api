@@ -7,3 +7,4 @@ data/
 *.db
 api_key_pepper
 node_modules/
+Front-end new/build/

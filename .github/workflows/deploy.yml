@@ -23,8 +23,11 @@ jobs:
             # دریافت آخرین تغییرات
             git pull origin main
             
-            # ساخت مجدد و اجرای کانتینرها (با دستور خط‌تیره دار)
-            docker-compose up -d --build
+            # توقف کامل و حذف سرویس‌های قبلی (برای جلوگیری از سرو شدن نسخه قدیمی فرانت)
+            docker-compose down --remove-orphans
+
+            # ساخت مجدد و اجرای کانتینرها
+            docker-compose up -d --build --force-recreate --remove-orphans
             
             # پاکسازی ایمیج‌های قدیمی برای پر نشدن حافظه سرور
             docker image prune -f
