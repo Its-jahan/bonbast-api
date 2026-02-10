@@ -42,6 +42,35 @@ const persianNames = {
   "bitcoin": "بیت‌کوین"
 };
 
+const IconSun = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+    <path
+      d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path d="M12 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 20v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M4.93 4.93 6.34 6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M17.66 17.66l1.41 1.41" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M2 12h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M20 12h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M4.93 19.07l1.41-1.41" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M17.66 6.34l1.41-1.41" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const IconMoon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+    <path
+      d="M21 13.2A7.8 7.8 0 0 1 10.8 3a6.6 6.6 0 1 0 10.2 10.2Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 function App() {
   const [prices, setPrices] = useState({});
   const [lastUpdated, setLastUpdated] = useState('');
@@ -190,347 +219,287 @@ function App() {
   const isDark = theme === 'dark';
 
   return (
-    <div
-      className={`min-h-screen px-4 sm:px-6 lg:px-8 py-6 font-sans transition-colors duration-300 ${
-        isDark ? 'bg-slate-950 text-slate-50' : 'bg-slate-50 text-slate-900'
-      }`}
-      dir="rtl"
-    >
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-              پنل API بون‌بست
-            </h1>
-            <p className={`mt-2 text-sm sm:text-base ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              مشاهده نرخ‌های لحظه‌ای و مدیریت دسترسی API برای فروش آنلاین.
-            </p>
-            {lastUpdated && (
-              <p className={`mt-1 text-xs sm:text-sm dir-ltr ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Last Update: {lastUpdated}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between sm:justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setTheme(isDark ? 'light' : 'dark')}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium shadow-sm transition-colors ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800 hover:bg-slate-700'
-                  : 'border-slate-200 bg-white hover:bg-slate-100'
-              }`}
-            >
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white dark:bg-yellow-400 dark:text-slate-900">
-                {isDark ? '🌙' : '☀️'}
-              </span>
-              <span>{isDark ? 'تم تیره' : 'تم روشن'}</span>
-            </button>
-          </div>
-        </header>
-
-        <div
-          className={`mb-8 inline-flex rounded-full border p-1 text-sm ${
-            isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-200 bg-white'
-          }`}
-        >
-          <button
-            type="button"
-            onClick={() => setActiveTab('rates')}
-            className={`flex-1 rounded-full px-4 py-2 transition-colors ${
-              activeTab === 'rates'
-                ? isDark
-                  ? 'bg-teal-500 text-slate-950'
-                  : 'bg-teal-600 text-white'
-                : isDark
-                  ? 'text-slate-300'
-                  : 'text-slate-600'
-            }`}
-          >
-            نرخ‌های لحظه‌ای
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('api')}
-            className={`flex-1 rounded-full px-4 py-2 transition-colors ${
-              activeTab === 'api'
-                ? isDark
-                  ? 'bg-teal-500 text-slate-950'
-                  : 'bg-teal-600 text-white'
-                : isDark
-                  ? 'text-slate-300'
-                  : 'text-slate-600'
-            }`}
-          >
-            مدیریت API و پلن‌ها
-          </button>
-        </div>
-
-        {activeTab === 'rates' && (
-          <>
-            {loading && (
-              <p className="text-center text-lg animate-pulse">
-                در حال دریافت نرخ‌ها...
-              </p>
-            )}
-            
-            {error && (
-              <div className="bg-red-900/10 border border-red-500/60 text-red-700 dark:text-red-100 dark:bg-red-900/40 dark:border-red-500 p-4 rounded-2xl text-center mb-6">
-                {error}
-              </div>
-            )}
-
-            {!loading && !error && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.keys(persianNames).map((key) => {
-                  const price = prices[key];
-                  if (!price || price === "N/A") return null;
-
-                  return (
-                    <div
-                      key={key}
-                      className={`rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
-                        isDark
-                          ? 'bg-slate-900/80 border-slate-800 hover:border-teal-500/40'
-                          : 'bg-white border-slate-200 hover:border-teal-500/40'
-                      } p-4 flex justify-between items-center`}
-                    >
-                      <span className={isDark ? 'text-slate-200' : 'text-slate-800'}>
-                        {persianNames[key]}
-                      </span>
-                      <span className="text-lg sm:text-xl font-mono font-bold text-teal-500 tracking-wider">
-                        {Number(price).toLocaleString()}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-
-        {activeTab === 'api' && (
-          <div className="space-y-6">
-            <section
-              className={`rounded-2xl border p-6 sm:p-8 flex flex-col gap-4 sm:flex-row sm:items-center ${
-                isDark
-                  ? 'bg-gradient-to-l from-slate-900 to-slate-950 border-slate-800'
-                  : 'bg-gradient-to-l from-teal-50 to-white border-teal-100'
-              }`}
-            >
-              <div className="flex-1">
-                <h2 className="text-2xl sm:text-3xl font-bold mb-2">
-                  فروش آنلاین دسترسی به API
-                </h2>
-                <p className={isDark ? 'text-slate-200' : 'text-slate-700'}>
-                  پلن‌های مختلف برای استارتاپ‌ها، فین‌تک‌ها و کسب‌وکارهایی که به نرخ‌های
-                  دقیق و به‌روز نیاز دارند. این نسخه، «صدور کلید + سقف مصرف» را آماده می‌کند
-                  (اتصال پرداخت را بعداً اضافه کنید).
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50" dir="rtl">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="rounded-3xl border border-slate-200/70 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/50">
+            <header className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border-b border-slate-200/70 dark:border-slate-800">
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  پنل Bonbast API
+                </h1>
+                <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300">
+                  نرخ‌های لحظه‌ای + مدیریت پلن‌ها و کلید API (نسخه MVP).
                 </p>
-              </div>
-              <div className="flex flex-col items-stretch gap-2 min-w-[240px]">
-                <label className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  ایمیل مشتری
-                </label>
-                <input
-                  value={purchaseEmail}
-                  onChange={(e) => setPurchaseEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className={`rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${
-                    isDark
-                      ? 'bg-slate-950/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-teal-500/70'
-                      : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-teal-500/70'
-                  }`}
-                  dir="ltr"
-                />
-                {purchaseError && (
-                  <p className="text-xs text-red-500">{purchaseError}</p>
-                )}
-              </div>
-            </section>
-
-            <section className="grid gap-4 md:grid-cols-3">
-              {plansLoading && (
-                <div className={`rounded-2xl border p-5 md:col-span-3 ${isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'}`}>
-                  <p className="text-sm animate-pulse">در حال دریافت پلن‌ها...</p>
-                </div>
-              )}
-              {plansError && (
-                <div className="md:col-span-3 bg-red-900/10 border border-red-500/60 text-red-700 dark:text-red-100 dark:bg-red-900/40 dark:border-red-500 p-4 rounded-2xl text-center">
-                  {plansError}
-                </div>
-              )}
-              {!plansLoading && !plansError && plans.map((plan) => (
-                <div
-                  key={plan.slug}
-                  className={`rounded-2xl border p-5 flex flex-col gap-3 ${
-                    isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-semibold mb-1">{plan.name}</h3>
-                      <p className={isDark ? 'text-slate-300 text-sm' : 'text-slate-600 text-sm'}>
-                        سقف ماهانه: <span className="font-mono">{Number(plan.monthly_quota).toLocaleString()}</span>
-                      </p>
-                      <p className={isDark ? 'text-slate-400 text-xs' : 'text-slate-500 text-xs'}>
-                        محدودیت تقریبی: <span className="font-mono">{Number(plan.rpm_limit).toLocaleString()}</span> درخواست در دقیقه
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-teal-500/15 text-teal-400 px-3 py-1 text-xs font-semibold">
-                      {plan.slug}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={purchaseLoading}
-                    onClick={() => purchasePlan(plan.slug)}
-                    className={`rounded-xl text-sm font-semibold px-4 py-2.5 shadow-md transition-colors ${
-                      purchaseLoading
-                        ? 'bg-slate-500/40 text-slate-200 cursor-not-allowed'
-                        : 'bg-teal-500 hover:bg-teal-600 text-white'
-                    }`}
-                  >
-                    {purchaseLoading ? 'در حال صدور کلید...' : 'صدور کلید API (Demo)'}
-                  </button>
-                  <p className={isDark ? 'text-[11px] text-slate-400' : 'text-[11px] text-slate-500'}>
-                    نکته: این دکمه فعلاً پرداخت ندارد و فقط کلید صادر می‌کند.
+                {lastUpdated && (
+                  <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span>آخرین بروزرسانی:</span>
+                    <span className="font-mono" dir="ltr">{lastUpdated}</span>
                   </p>
-                </div>
-              ))}
-            </section>
-
-            <section className="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-              <div
-                className={`rounded-2xl border p-5 ${
-                  isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
-                }`}
-              >
-                <h3 className="font-semibold mb-3">نمونه استفاده از API</h3>
-                <p className={isDark ? 'text-slate-300 text-sm mb-3' : 'text-slate-700 text-sm mb-3'}>
-                  بعد از خرید پلن و صدور کلید، درخواست‌ها را به‌صورت زیر ارسال کنید:
-                </p>
-                <pre
-                  className={`rounded-xl text-xs sm:text-[13px] leading-relaxed overflow-x-auto p-4 ${
-                    isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-900 text-slate-100'
-                  }`}
-                >
-{`GET https://your-domain.com/api/v1/prices
-x-api-key: YOUR_API_KEY
-
-// response:
-{
-  "data": {
-    "usd": 123450,
-    "eur": 134000,
-    "gold_ounce": 2500000
-  },
-  "last_updated": "2026-02-10 09:30:00"
-}`}
-                </pre>
+                )}
               </div>
 
-              <div
-                className={`rounded-2xl border p-5 space-y-3 ${
-                  isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
-                }`}
-              >
-                <h3 className="font-semibold">مدیریت کلید API (Self-serve)</h3>
+              <div className="flex items-center justify-between sm:justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-900"
+                >
+                  {isDark ? (
+                    <IconSun className="h-4 w-4 text-amber-400" />
+                  ) : (
+                    <IconMoon className="h-4 w-4 text-slate-700" />
+                  )}
+                  <span>{isDark ? 'تم روشن' : 'تم تیره'}</span>
+                </button>
+              </div>
+            </header>
 
-                <label className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  کلید API
-                </label>
-                <input
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="bb_..."
-                  className={`rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${
-                    isDark
-                      ? 'bg-slate-950/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-teal-500/70'
-                      : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-teal-500/70'
+            <div className="p-6 sm:p-8">
+              <div className="mb-6 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('rates')}
+                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                    activeTab === 'rates'
+                      ? 'border-teal-500/50 bg-teal-500 text-white shadow-sm shadow-teal-500/20'
+                      : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/30 dark:hover:bg-slate-900/60'
                   }`}
-                  dir="ltr"
-                />
+                >
+                  نرخ‌های لحظه‌ای
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('api')}
+                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                    activeTab === 'api'
+                      ? 'border-teal-500/50 bg-teal-500 text-white shadow-sm shadow-teal-500/20'
+                      : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/30 dark:hover:bg-slate-900/60'
+                  }`}
+                >
+                  فروش و مدیریت API
+                </button>
+              </div>
 
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={selfLoading || !apiKeyInput}
-                    onClick={fetchSelfUsage}
-                    className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                      selfLoading || !apiKeyInput
-                        ? 'bg-slate-500/40 text-slate-200 cursor-not-allowed'
-                        : 'bg-slate-800 text-slate-100 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
-                    }`}
-                  >
-                    {selfLoading ? '...' : 'نمایش مصرف'}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={selfLoading || !apiKeyInput}
-                    onClick={rotateSelfKey}
-                    className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                      selfLoading || !apiKeyInput
-                        ? 'bg-slate-500/40 text-slate-200 cursor-not-allowed'
-                        : 'bg-teal-500 text-white hover:bg-teal-600'
-                    }`}
-                  >
-                    {selfLoading ? '...' : 'تعویض کلید'}
-                  </button>
-                </div>
-
-                {selfError && (
-                  <p className="text-xs text-red-500">{selfError}</p>
-                )}
-
-                {selfUsage && (
-                  <div className={`rounded-xl border px-3 py-2 text-xs ${
-                    isDark ? 'border-slate-700 bg-slate-950/60 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'
-                  }`}>
-                    <p>
-                      پلن: <span className="font-semibold">{selfUsage.plan?.name}</span>
-                    </p>
-                    <p>
-                      ماه: <span className="font-mono" dir="ltr">{selfUsage.month}</span>
-                    </p>
-                    <p>
-                      مصرف: <span className="font-mono">{Number(selfUsage.request_count).toLocaleString()}</span> /{' '}
-                      <span className="font-mono">{Number(selfUsage.monthly_quota).toLocaleString()}</span>
+              {activeTab === 'rates' && (
+                <div className="space-y-5">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/30">
+                    <h2 className="text-lg font-bold">نرخ‌های لحظه‌ای</h2>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                      از مسیر <span className="font-mono" dir="ltr">/api/prices</span> دریافت می‌شود.
                     </p>
                   </div>
-                )}
-              </div>
-            </section>
 
-            {issuedKey?.api_key && (
-              <section
-                className={`rounded-2xl border p-5 ${
-                  isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
-                }`}
-              >
-                <h3 className="font-semibold mb-2">کلید صادر شده</h3>
-                <p className={isDark ? 'text-slate-300 text-sm mb-3' : 'text-slate-700 text-sm mb-3'}>
-                  این کلید را در جای امن ذخیره کنید. در نسخه‌های واقعی، بهتر است فقط یک‌بار نمایش داده شود.
-                </p>
-                <div
-                  className={`rounded-xl border px-3 py-2 text-sm flex items-center justify-between gap-3 ${
-                    isDark ? 'border-slate-700 bg-slate-950/60' : 'border-slate-200 bg-slate-50'
-                  }`}
-                >
-                  <span className="font-mono break-all" dir="ltr">{issuedKey.api_key}</span>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard?.writeText(issuedKey.api_key)}
-                    className="shrink-0 rounded-lg bg-slate-800 text-xs text-slate-100 px-2 py-1 hover:bg-slate-700"
-                  >
-                    کپی
-                  </button>
+                  {loading && (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/30">
+                      <p className="text-sm animate-pulse">در حال دریافت نرخ‌ها...</p>
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="rounded-2xl border border-red-500/50 bg-red-50 p-4 text-red-700 dark:bg-red-950/30 dark:text-red-200">
+                      {error}
+                    </div>
+                  )}
+
+                  {!loading && !error && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {Object.keys(persianNames).map((key) => {
+                        const price = prices[key];
+                        if (!price || price === "N/A") return null;
+
+                        return (
+                          <div
+                            key={key}
+                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/30"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                {persianNames[key]}
+                              </span>
+                              <span className="text-lg font-mono font-bold text-teal-500">
+                                {Number(price).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </section>
-            )}
+              )}
+
+              {activeTab === 'api' && (
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/30">
+                    <h2 className="text-lg font-bold">فروش و مدیریت API</h2>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                      صدور کلید (Demo) + نمایش مصرف + تعویض کلید. اندپوینت پولی:
+                      <span className="mx-1 font-mono" dir="ltr">/api/v1/prices</span>
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/30">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                          <h3 className="font-semibold">پلن‌ها</h3>
+                          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                            ایمیل را وارد کنید و یکی از پلن‌ها را انتخاب کنید.
+                          </p>
+                        </div>
+                        <div className="min-w-[240px]">
+                          <label className="text-xs text-slate-600 dark:text-slate-300">ایمیل</label>
+                          <input
+                            value={purchaseEmail}
+                            onChange={(e) => setPurchaseEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-teal-500/70 dark:border-slate-800 dark:bg-slate-950/40"
+                            dir="ltr"
+                          />
+                          {purchaseError && <p className="mt-1 text-xs text-red-500">{purchaseError}</p>}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        {plansLoading && (
+                          <div className="md:col-span-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-950/30">
+                            <p className="animate-pulse">در حال دریافت پلن‌ها...</p>
+                          </div>
+                        )}
+                        {plansError && (
+                          <div className="md:col-span-3 rounded-2xl border border-red-500/50 bg-red-50 p-4 text-red-700 dark:bg-red-950/30 dark:text-red-200">
+                            {plansError}
+                          </div>
+                        )}
+                        {!plansLoading && !plansError && plans.map((plan) => (
+                          <div
+                            key={plan.slug}
+                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/20"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-semibold">{plan.name}</p>
+                                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                                  سقف ماهانه: <span className="font-mono">{Number(plan.monthly_quota).toLocaleString()}</span>
+                                </p>
+                                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                  RPM: <span className="font-mono">{Number(plan.rpm_limit).toLocaleString()}</span>
+                                </p>
+                              </div>
+                              <span className="shrink-0 rounded-full bg-teal-500/15 px-3 py-1 text-xs font-semibold text-teal-600 dark:text-teal-300">
+                                {plan.slug}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={purchaseLoading}
+                              onClick={() => purchasePlan(plan.slug)}
+                              className={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                                purchaseLoading
+                                  ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                  : 'bg-teal-500 text-white hover:bg-teal-600'
+                              }`}
+                            >
+                              {purchaseLoading ? 'در حال صدور...' : 'صدور کلید (Demo)'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/30">
+                      <h3 className="font-semibold">مدیریت کلید (Self-serve)</h3>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                        کلید را وارد کنید و مصرف را ببینید یا کلید را بچرخانید.
+                      </p>
+
+                      <label className="mt-4 block text-xs text-slate-600 dark:text-slate-300">API Key</label>
+                      <input
+                        value={apiKeyInput}
+                        onChange={(e) => setApiKeyInput(e.target.value)}
+                        placeholder="bb_..."
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-mono outline-none transition focus:border-teal-500/70 dark:border-slate-800 dark:bg-slate-950/40"
+                        dir="ltr"
+                      />
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={selfLoading || !apiKeyInput}
+                          onClick={fetchSelfUsage}
+                          className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                            selfLoading || !apiKeyInput
+                              ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                              : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {selfLoading ? '...' : 'نمایش مصرف'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={selfLoading || !apiKeyInput}
+                          onClick={rotateSelfKey}
+                          className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                            selfLoading || !apiKeyInput
+                              ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                              : 'bg-teal-500 text-white hover:bg-teal-600'
+                          }`}
+                        >
+                          {selfLoading ? '...' : 'تعویض کلید'}
+                        </button>
+                      </div>
+
+                      {selfError && <p className="mt-2 text-xs text-red-500">{selfError}</p>}
+
+                      {selfUsage && (
+                        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-950/30">
+                          <p className="text-slate-700 dark:text-slate-200">
+                            پلن: <span className="font-semibold">{selfUsage.plan?.name}</span>
+                          </p>
+                          <p className="mt-1 text-slate-600 dark:text-slate-300">
+                            ماه: <span className="font-mono" dir="ltr">{selfUsage.month}</span>
+                          </p>
+                          <p className="mt-1 text-slate-600 dark:text-slate-300">
+                            مصرف: <span className="font-mono">{Number(selfUsage.request_count).toLocaleString()}</span> /{' '}
+                            <span className="font-mono">{Number(selfUsage.monthly_quota).toLocaleString()}</span>
+                          </p>
+                        </div>
+                      )}
+
+                      {issuedKey?.api_key && (
+                        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/30">
+                          <p className="text-sm font-semibold">کلید صادر شده</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono break-all dark:border-slate-800 dark:bg-slate-950/40" dir="ltr">
+                              {issuedKey.api_key}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => navigator.clipboard?.writeText(issuedKey.api_key)}
+                              className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700"
+                            >
+                              کپی
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  </div>
+
+                  <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/30">
+                    <h3 className="font-semibold mb-2">نمونه درخواست</h3>
+                    <pre className="rounded-2xl bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 overflow-x-auto">
+{`GET https://your-domain.com/api/v1/prices
+x-api-key: YOUR_API_KEY`}
+                    </pre>
+                  </section>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
