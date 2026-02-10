@@ -6,7 +6,7 @@ services:
     build: .
     restart: always
     ports:
-      - "5050:5000"
+      - "5050:5001"
     environment:
       - CHROME_BIN=/usr/bin/chromium
       - CHROMEDRIVER_PATH=/usr/bin/chromedriver
