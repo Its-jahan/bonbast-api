@@ -8,7 +8,10 @@ import threading
 import time
 import logging
 
+from api_manager import init_api_manager, require_metered_api_key
+
 app = Flask(__name__)
+init_api_manager(app)
 
 # تنظیمات لاگینگ
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -126,6 +129,16 @@ threading.Thread(target=scraper_worker, daemon=True).start()
 @app.route('/prices', methods=['GET'])
 def get_prices():
     return jsonify(LATEST_PRICES)
+
+@app.route('/v1/prices', methods=['GET'])
+@require_metered_api_key
+def get_prices_v1():
+    # Same payload shape as /prices, but protected with an API key.
+    return jsonify(LATEST_PRICES)
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"ok": True, "status": LATEST_PRICES.get("status")})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import './App.css';
 
 // دیکشنری نام‌ها را بیرون کامپوننت تعریف کردیم تا کد تمیزتر باشد
 const persianNames = {
@@ -48,6 +47,21 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [plans, setPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansError, setPlansError] = useState(null);
+
+  const [purchaseEmail, setPurchaseEmail] = useState('');
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [purchaseError, setPurchaseError] = useState(null);
+  const [issuedKey, setIssuedKey] = useState(null);
+
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [selfLoading, setSelfLoading] = useState(false);
+  const [selfError, setSelfError] = useState(null);
+  const [selfUsage, setSelfUsage] = useState(null);
+
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return 'dark';
     const saved = window.localStorage.getItem('theme');
@@ -93,6 +107,85 @@ function App() {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'api') return;
+
+    const fetchPlans = async () => {
+      setPlansLoading(true);
+      setPlansError(null);
+      try {
+        const res = await axios.get('/api/plans');
+        setPlans(res.data?.plans ?? []);
+      } catch (err) {
+        console.error('Plans error:', err);
+        setPlansError('خطا در دریافت پلن‌ها. لطفا بک‌اند را بررسی کنید.');
+      } finally {
+        setPlansLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, [activeTab]);
+
+  const purchasePlan = async (planSlug) => {
+    setIssuedKey(null);
+    setPurchaseError(null);
+    setSelfUsage(null);
+    setSelfError(null);
+
+    if (!purchaseEmail || !purchaseEmail.includes('@')) {
+      setPurchaseError('ایمیل معتبر وارد کنید.');
+      return;
+    }
+    setPurchaseLoading(true);
+    try {
+      const res = await axios.post('/api/purchase', { email: purchaseEmail, plan_slug: planSlug });
+      setIssuedKey(res.data);
+      setApiKeyInput(res.data?.api_key ?? '');
+    } catch (err) {
+      console.error('Purchase error:', err);
+      setPurchaseError('صدور کلید انجام نشد. لاگ‌های بک‌اند را بررسی کنید.');
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
+
+  const fetchSelfUsage = async () => {
+    setSelfLoading(true);
+    setSelfError(null);
+    setSelfUsage(null);
+    try {
+      const res = await axios.get('/api/self/usage', { headers: { 'x-api-key': apiKeyInput } });
+      setSelfUsage(res.data);
+    } catch (err) {
+      console.error('Self usage error:', err);
+      const status = err?.response?.status;
+      if (status === 401) setSelfError('کلید API نامعتبر است.');
+      else if (status === 429) setSelfError('سقف مصرف پلن شما پر شده است.');
+      else setSelfError('خطا در دریافت مصرف.');
+    } finally {
+      setSelfLoading(false);
+    }
+  };
+
+  const rotateSelfKey = async () => {
+    setSelfLoading(true);
+    setSelfError(null);
+    try {
+      const res = await axios.post('/api/self/rotate', {}, { headers: { 'x-api-key': apiKeyInput } });
+      setIssuedKey(res.data);
+      setApiKeyInput(res.data?.api_key ?? '');
+      setSelfUsage(null);
+    } catch (err) {
+      console.error('Rotate error:', err);
+      const status = err?.response?.status;
+      if (status === 401) setSelfError('کلید API نامعتبر است.');
+      else setSelfError('تعویض کلید انجام نشد.');
+    } finally {
+      setSelfLoading(false);
+    }
+  };
 
   const isDark = theme === 'dark';
 
@@ -232,70 +325,80 @@ function App() {
                 </h2>
                 <p className={isDark ? 'text-slate-200' : 'text-slate-700'}>
                   پلن‌های مختلف برای استارتاپ‌ها، فین‌تک‌ها و کسب‌وکارهایی که به نرخ‌های
-                  دقیق و به‌روز نیاز دارند. پرداخت آنلاین، صدور کلید API و مانیتورینگ مصرف.
+                  دقیق و به‌روز نیاز دارند. این نسخه، «صدور کلید + سقف مصرف» را آماده می‌کند
+                  (اتصال پرداخت را بعداً اضافه کنید).
                 </p>
               </div>
-              <div className="flex flex-col items-stretch gap-2 min-w-[200px]">
-                <button
-                  type="button"
-                  className="rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-sm font-semibold px-4 py-2.5 shadow-md transition-colors"
-                >
-                  شروع فروش API
-                </button>
-                <span className={isDark ? 'text-xs text-slate-400' : 'text-xs text-slate-500'}>
-                  این دکمه فعلاً نمایشی است؛ به بک‌اند پرداخت و صدور کلید متصل کنید.
-                </span>
+              <div className="flex flex-col items-stretch gap-2 min-w-[240px]">
+                <label className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  ایمیل مشتری
+                </label>
+                <input
+                  value={purchaseEmail}
+                  onChange={(e) => setPurchaseEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={`rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${
+                    isDark
+                      ? 'bg-slate-950/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-teal-500/70'
+                      : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-teal-500/70'
+                  }`}
+                  dir="ltr"
+                />
+                {purchaseError && (
+                  <p className="text-xs text-red-500">{purchaseError}</p>
+                )}
               </div>
             </section>
 
             <section className="grid gap-4 md:grid-cols-3">
-              <div
-                className={`rounded-2xl border p-5 ${
-                  isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
-                }`}
-              >
-                <h3 className="font-semibold mb-1">پلن استارتر</h3>
-                <p className={isDark ? 'text-slate-300 text-sm' : 'text-slate-600 text-sm'}>
-                  مناسب پروژه‌های کوچک و تست.
-                </p>
-                <p className="mt-4 text-2xl font-bold text-teal-500">۳۰۰K</p>
-                <p className={isDark ? 'text-slate-400 text-xs' : 'text-slate-500 text-xs'}>
-                  درخواست رایگان در ماه
-                </p>
-              </div>
-              <div
-                className={`rounded-2xl border p-5 relative overflow-hidden ${
-                  isDark
-                    ? 'bg-gradient-to-b from-emerald-500/10 via-slate-900 to-slate-950 border-emerald-500/60'
-                    : 'bg-gradient-to-b from-emerald-50 via-white to-white border-emerald-400/60'
-                }`}
-              >
-                <span className="absolute left-4 top-4 rounded-full bg-amber-400/90 px-3 py-1 text-[10px] font-bold text-slate-900">
-                  محبوب‌ترین
-                </span>
-                <h3 className="mt-6 font-semibold mb-1">پلن تجاری</h3>
-                <p className={isDark ? 'text-slate-200 text-sm' : 'text-slate-700 text-sm'}>
-                  برای محصولات در حال رشد و فین‌تک‌ها.
-                </p>
-                <p className="mt-4 text-2xl font-bold text-teal-500">+۱M</p>
-                <p className={isDark ? 'text-slate-300 text-xs' : 'text-slate-600 text-xs'}>
-                  درخواست در ماه (با هزینه اضافه برای مازاد)
-                </p>
-              </div>
-              <div
-                className={`rounded-2xl border p-5 ${
-                  isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
-                }`}
-              >
-                <h3 className="font-semibold mb-1">پلن سازمانی</h3>
-                <p className={isDark ? 'text-slate-300 text-sm' : 'text-slate-600 text-sm'}>
-                  SLA اختصاصی، پشتیبانی ویژه و حجم بالا.
-                </p>
-                <p className="mt-4 text-base font-semibold text-teal-500">تماس برای قیمت</p>
-                <p className={isDark ? 'text-slate-400 text-xs' : 'text-slate-500 text-xs'}>
-                  قرارداد اختصاصی، سرور جداگانه و امکانات سفارشی.
-                </p>
-              </div>
+              {plansLoading && (
+                <div className={`rounded-2xl border p-5 md:col-span-3 ${isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'}`}>
+                  <p className="text-sm animate-pulse">در حال دریافت پلن‌ها...</p>
+                </div>
+              )}
+              {plansError && (
+                <div className="md:col-span-3 bg-red-900/10 border border-red-500/60 text-red-700 dark:text-red-100 dark:bg-red-900/40 dark:border-red-500 p-4 rounded-2xl text-center">
+                  {plansError}
+                </div>
+              )}
+              {!plansLoading && !plansError && plans.map((plan) => (
+                <div
+                  key={plan.slug}
+                  className={`rounded-2xl border p-5 flex flex-col gap-3 ${
+                    isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold mb-1">{plan.name}</h3>
+                      <p className={isDark ? 'text-slate-300 text-sm' : 'text-slate-600 text-sm'}>
+                        سقف ماهانه: <span className="font-mono">{Number(plan.monthly_quota).toLocaleString()}</span>
+                      </p>
+                      <p className={isDark ? 'text-slate-400 text-xs' : 'text-slate-500 text-xs'}>
+                        محدودیت تقریبی: <span className="font-mono">{Number(plan.rpm_limit).toLocaleString()}</span> درخواست در دقیقه
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-teal-500/15 text-teal-400 px-3 py-1 text-xs font-semibold">
+                      {plan.slug}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={purchaseLoading}
+                    onClick={() => purchasePlan(plan.slug)}
+                    className={`rounded-xl text-sm font-semibold px-4 py-2.5 shadow-md transition-colors ${
+                      purchaseLoading
+                        ? 'bg-slate-500/40 text-slate-200 cursor-not-allowed'
+                        : 'bg-teal-500 hover:bg-teal-600 text-white'
+                    }`}
+                  >
+                    {purchaseLoading ? 'در حال صدور کلید...' : 'صدور کلید API (Demo)'}
+                  </button>
+                  <p className={isDark ? 'text-[11px] text-slate-400' : 'text-[11px] text-slate-500'}>
+                    نکته: این دکمه فعلاً پرداخت ندارد و فقط کلید صادر می‌کند.
+                  </p>
+                </div>
+              ))}
             </section>
 
             <section className="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
@@ -313,7 +416,7 @@ function App() {
                     isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-900 text-slate-100'
                   }`}
                 >
-{`GET https://your-domain.com/api/prices
+{`GET https://your-domain.com/api/v1/prices
 x-api-key: YOUR_API_KEY
 
 // response:
@@ -323,7 +426,7 @@ x-api-key: YOUR_API_KEY
     "eur": 134000,
     "gold_ounce": 2500000
   },
-  "last_updated": "2026-02-10T09:30:00Z"
+  "last_updated": "2026-02-10 09:30:00"
 }`}
                 </pre>
               </div>
@@ -333,32 +436,99 @@ x-api-key: YOUR_API_KEY
                   isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
                 }`}
               >
-                <h3 className="font-semibold">مدیریت کلیدهای API</h3>
-                <p className={isDark ? 'text-slate-300 text-sm' : 'text-slate-700 text-sm'}>
-                  این بخش صرفاً طراحی رابط است. آن را به سرویس مدیریت کلید، صدور و ابطال متصل کنید.
+                <h3 className="font-semibold">مدیریت کلید API (Self-serve)</h3>
+
+                <label className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  کلید API
+                </label>
+                <input
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="bb_..."
+                  className={`rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${
+                    isDark
+                      ? 'bg-slate-950/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-teal-500/70'
+                      : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-teal-500/70'
+                  }`}
+                  dir="ltr"
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={selfLoading || !apiKeyInput}
+                    onClick={fetchSelfUsage}
+                    className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                      selfLoading || !apiKeyInput
+                        ? 'bg-slate-500/40 text-slate-200 cursor-not-allowed'
+                        : 'bg-slate-800 text-slate-100 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    {selfLoading ? '...' : 'نمایش مصرف'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={selfLoading || !apiKeyInput}
+                    onClick={rotateSelfKey}
+                    className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                      selfLoading || !apiKeyInput
+                        ? 'bg-slate-500/40 text-slate-200 cursor-not-allowed'
+                        : 'bg-teal-500 text-white hover:bg-teal-600'
+                    }`}
+                  >
+                    {selfLoading ? '...' : 'تعویض کلید'}
+                  </button>
+                </div>
+
+                {selfError && (
+                  <p className="text-xs text-red-500">{selfError}</p>
+                )}
+
+                {selfUsage && (
+                  <div className={`rounded-xl border px-3 py-2 text-xs ${
+                    isDark ? 'border-slate-700 bg-slate-950/60 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'
+                  }`}>
+                    <p>
+                      پلن: <span className="font-semibold">{selfUsage.plan?.name}</span>
+                    </p>
+                    <p>
+                      ماه: <span className="font-mono" dir="ltr">{selfUsage.month}</span>
+                    </p>
+                    <p>
+                      مصرف: <span className="font-mono">{Number(selfUsage.request_count).toLocaleString()}</span> /{' '}
+                      <span className="font-mono">{Number(selfUsage.monthly_quota).toLocaleString()}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {issuedKey?.api_key && (
+              <section
+                className={`rounded-2xl border p-5 ${
+                  isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
+                }`}
+              >
+                <h3 className="font-semibold mb-2">کلید صادر شده</h3>
+                <p className={isDark ? 'text-slate-300 text-sm mb-3' : 'text-slate-700 text-sm mb-3'}>
+                  این کلید را در جای امن ذخیره کنید. در نسخه‌های واقعی، بهتر است فقط یک‌بار نمایش داده شود.
                 </p>
                 <div
-                  className={`rounded-xl border px-3 py-2 text-xs flex items-center justify-between gap-2 ${
+                  className={`rounded-xl border px-3 py-2 text-sm flex items-center justify-between gap-3 ${
                     isDark ? 'border-slate-700 bg-slate-950/60' : 'border-slate-200 bg-slate-50'
                   }`}
                 >
-                  <span className={isDark ? 'text-slate-300' : 'text-slate-700'}>
-                    API Key فعلی: <span className="font-mono">••••-••••-••••</span>
-                  </span>
+                  <span className="font-mono break-all" dir="ltr">{issuedKey.api_key}</span>
                   <button
                     type="button"
-                    className="rounded-lg bg-slate-800 text-xs text-slate-100 px-2 py-1 hover:bg-slate-700"
+                    onClick={() => navigator.clipboard?.writeText(issuedKey.api_key)}
+                    className="shrink-0 rounded-lg bg-slate-800 text-xs text-slate-100 px-2 py-1 hover:bg-slate-700"
                   >
-                    تولید کلید جدید
+                    کپی
                   </button>
                 </div>
-                <ul className={`text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  <li>• اتصال این UI به بک‌اند صدور/ابطال کلید</li>
-                  <li>• نمایش لاگ مصرف و محدودیت هر پلن</li>
-                  <li>• پیاده‌سازی پرداخت آنلاین برای خرید پلن</li>
-                </ul>
-              </div>
-            </section>
+              </section>
+            )}
           </div>
         )}
       </div>

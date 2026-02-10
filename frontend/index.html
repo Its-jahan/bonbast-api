@@ -4,7 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
     <title>پنل Bonbast API</title>
+    <script>
+      (() => {
+        try {
+          const saved = window.localStorage.getItem('theme');
+          const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const theme = saved === 'light' || saved === 'dark' ? saved : (systemDark ? 'dark' : 'light');
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        } catch {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

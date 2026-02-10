@@ -10,7 +10,12 @@ services:
     environment:
       - CHROME_BIN=/usr/bin/chromium
       - CHROMEDRIVER_PATH=/usr/bin/chromedriver
+      - API_DB_PATH=/data/api_manager.db
+      - API_KEY_PEPPER_PATH=/data/api_key_pepper
+      # - ADMIN_TOKEN=change-me
     shm_size: '2gb'
+    volumes:
+      - ./data:/data
 
   frontend:
     container_name: bonbast-frontend
