@@ -1,0 +1,30 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # هر وقت روی main پوش شد، اجرا بشه
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            # رفتن به پوشه پروژه
+            cd ~/bonbast-api
+            
+            # دریافت آخرین تغییرات
+            git pull origin main
+            
+            # ساخت مجدد و اجرای کانتینرها (با دستور خط‌تیره دار)
+            docker-compose up -d --build
+            
+            # پاکسازی ایمیج‌های قدیمی برای پر نشدن حافظه سرور
+            docker image prune -f
