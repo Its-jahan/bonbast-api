@@ -12,7 +12,7 @@ services:
       - API_DB_PATH=/data/api_manager.db
       - API_KEY_PEPPER_PATH=/data/api_key_pepper
       # JWT secret از Supabase Dashboard > Project Settings > API
-      # - SUPABASE_JWT_SECRET=your-jwt-secret
+      - SUPABASE_JWT_SECRET=1195c07a-24e0-4e27-802b-6161f714aa9f
       # - ADMIN_TOKEN=change-me
     shm_size: '2gb'
     volumes:
