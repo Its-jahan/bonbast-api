@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   api:
-    container_name: bonbast-api
     build: .
     restart: always
     ports:
@@ -18,7 +17,6 @@ services:
       - ./data:/data
 
   frontend:
-    container_name: bonbast-frontend
     build:
       context: "./Front-end new"
     restart: always

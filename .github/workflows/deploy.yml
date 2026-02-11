@@ -23,6 +23,9 @@ jobs:
             # دریافت آخرین تغییرات
             git pull origin main
             
+            # پاکسازی کانتینرهای نام‌گذاری‌شده قدیمی (برای جلوگیری از Conflict روی container_name)
+            docker rm -f bonbast-api bonbast-frontend 2>/dev/null || true
+
             # توقف کامل و حذف سرویس‌های قبلی (برای جلوگیری از سرو شدن نسخه قدیمی فرانت)
             docker-compose down --remove-orphans
 
