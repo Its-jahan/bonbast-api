@@ -43,6 +43,9 @@ docker-compose up -d --build
 ساخت جدول‌های Supabase (در SQL Editor) از این فایل:
 - `supabase/schema.sql`
 
+برای ساخت خودکار رکورد در `customers` هنگام ثبت‌نام در Supabase Auth،
+همان `supabase/schema.sql` شامل trigger لازم است.
+
 برای اندپوینت ادمین:
 - `ADMIN_TOKEN` را ست کنید و سپس `GET /api/admin/keys` را با هدر `x-admin-token` صدا بزنید.
 

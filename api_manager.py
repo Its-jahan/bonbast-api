@@ -309,7 +309,10 @@ def _sync_customer(db: _sqlite3.Connection, customer_id: int) -> None:
         "current_plan_slug": row["current_plan_slug"],
         "created_at": row["created_at"],
     }
-    _supabase_upsert("customers", payload, on_conflict="id")
+    if row["supabase_user_id"]:
+        _supabase_upsert("customers", payload, on_conflict="supabase_user_id")
+    else:
+        _supabase_upsert("customers", payload, on_conflict="id")
 
 
 def _sync_api_key(db: _sqlite3.Connection, api_key_id: int) -> None:
