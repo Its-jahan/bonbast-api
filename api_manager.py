@@ -198,6 +198,7 @@ def init_db() -> None:
     db_path = _get_db_path()
     _ensure_parent_dir(db_path)
     db = _sqlite3.connect(db_path)
+    db.row_factory = _sqlite3.Row
     try:
         db.execute("PRAGMA foreign_keys = ON;")
         db.executescript(
