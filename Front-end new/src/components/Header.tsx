@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Category, Chart2, Clock, Login, UserAdd } from 'iconsax-react';
+import { Category, Chart2, Login, UserAdd } from 'iconsax-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -11,48 +11,31 @@ export function Header({ lastUpdated }: HeaderProps) {
   const { user } = useAuth();
   const { language, setLanguage } = useLanguage();
   const isFa = language === 'fa';
-  const displayLastUpdated = (() => {
-    if (!lastUpdated) return null;
-    const d = new Date(lastUpdated);
-    if (!Number.isNaN(d.getTime())) {
-      return d.toLocaleTimeString(isFa ? 'fa-IR' : 'en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-    const parts = lastUpdated.split(' ');
-    return parts.length >= 2 ? parts[1] : lastUpdated;
-  })();
 
   return (
-    <header className="bg-[#191919] border-b border-[#2f2f2f] sticky top-0 z-50">
-      <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center">
-            <Chart2 size={18} variant="Bold" color="#191919" />
+    <header className="bg-[#0a0a0a] border-b border-[#2a2a2a]">
+      <div className="mx-auto flex h-20 w-full max-w-[1400px] items-center justify-between px-10">
+        <Link to="/" className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <Chart2 size={24} variant="Bold" color="#ffffff" />
           </div>
           <div>
-            <h1 className="text-sm font-medium text-white">
-              {isFa ? 'قیمت لحظه‌ای ارز' : 'Live Currency Rates'}
+            <h1 className="text-lg font-bold text-white">
+              {isFa ? 'قیمت لحظه‌ای ارز' : 'CryptoTracker'}
             </h1>
+            <p className="text-xs text-gray-400">
+              {isFa ? 'به‌روزرسانی لحظه‌ای' : 'Real-time updates'}
+            </p>
           </div>
         </Link>
 
-        <div className="flex items-center gap-2">
-          {lastUpdated && (
-            <div className="hidden md:flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5 text-xs text-white/80">
-              <Clock size={14} variant="Outline" color="currentColor" />
-              <span>
-                {isFa ? 'آخرین بروزرسانی' : 'Last update'}: {displayLastUpdated}
-              </span>
-            </div>
-          )}
-          <div className="flex items-center gap-0.5 rounded-md bg-white/10 p-0.5">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 rounded-xl bg-[#1a1a1a] p-1 border border-[#2a2a2a]">
             <button
               type="button"
               onClick={() => setLanguage('en')}
-              className={`px-2.5 py-1 text-xs font-medium rounded transition ${
-                language === 'en' ? 'bg-white text-[#191919]' : 'text-white/70 hover:text-white'
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                language === 'en' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'text-gray-400 hover:text-white'
               }`}
             >
               EN
@@ -60,8 +43,8 @@ export function Header({ lastUpdated }: HeaderProps) {
             <button
               type="button"
               onClick={() => setLanguage('fa')}
-              className={`px-2.5 py-1 text-xs font-medium rounded transition ${
-                language === 'fa' ? 'bg-white text-[#191919]' : 'text-white/70 hover:text-white'
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                language === 'fa' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'text-gray-400 hover:text-white'
               }`}
             >
               FA
@@ -70,25 +53,25 @@ export function Header({ lastUpdated }: HeaderProps) {
           {user ? (
             <Link
               to="/dashboard"
-              className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-[#191919] hover:bg-white/90 transition"
+              className="flex items-center gap-2 rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30"
             >
-              <Category size={14} variant="Bold" color="currentColor" />
-              <span className="hidden sm:inline">{isFa ? 'داشبورد' : 'Dashboard'}</span>
+              <Category size={18} variant="Bold" color="currentColor" />
+              <span>{isFa ? 'داشبورد' : 'Dashboard'}</span>
             </Link>
           ) : (
             <>
               <Link
                 to="/login"
-                className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-[#191919] hover:bg-white/90 transition"
+                className="flex items-center gap-2 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#262626] transition-all"
               >
-                <Login size={14} variant="Bold" color="currentColor" />
-                <span className="hidden sm:inline">{isFa ? 'ورود' : 'Sign in'}</span>
+                <Login size={18} variant="Bold" color="currentColor" />
+                <span>{isFa ? 'ورود' : 'Sign in'}</span>
               </Link>
               <Link
                 to="/register"
-                className="hidden sm:flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-[#191919] hover:bg-white/90 transition"
+                className="flex items-center gap-2 rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30"
               >
-                <UserAdd size={14} variant="Bold" color="currentColor" />
+                <UserAdd size={18} variant="Bold" color="currentColor" />
                 <span>{isFa ? 'ثبت‌نام' : 'Sign up'}</span>
               </Link>
             </>

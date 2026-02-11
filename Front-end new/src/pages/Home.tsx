@@ -163,49 +163,49 @@ export default function Home() {
         )}
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-6">
-          <div className="flex flex-col md:flex-row gap-3">
+        <div className="bg-[#1a1a1a] rounded-3xl p-8 border border-[#2a2a2a] mb-10">
+          <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 relative">
               <span
-                className={`absolute top-1/2 -translate-y-1/2 text-[#787774] ${
-                  isFa ? 'right-3' : 'left-3'
+                className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${
+                  isFa ? 'right-5' : 'left-5'
                 }`}
               >
-                <SearchNormal1 size={18} variant="Outline" color="currentColor" />
+                <SearchNormal1 size={20} variant="Outline" color="currentColor" />
               </span>
               <Input
                 type="text"
                 placeholder={isFa ? 'جستجو در ارزها...' : 'Search currencies...'}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`h-11 ${isFa ? 'pr-11 pl-4' : 'pl-11 pr-4'} bg-[#f7f6f3] border-0 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#2383e2]/20`}
+                className={`h-14 ${isFa ? 'pr-14 pl-5' : 'pl-14 pr-5'} bg-[#0a0a0a] border-[#2a2a2a] rounded-2xl text-base text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20`}
               />
             </div>
 
             <button
               onClick={handleManualRefresh}
               disabled={isRefreshing}
-              className="flex h-11 items-center gap-2 bg-[#2383e2] text-white px-5 rounded-xl hover:bg-[#1a6ec7] transition-all disabled:opacity-50 text-sm font-medium shadow-sm"
+              className="flex h-14 items-center justify-center gap-3 bg-blue-500 text-white px-8 rounded-2xl hover:bg-blue-600 transition-all disabled:opacity-50 text-base font-semibold shadow-lg shadow-blue-500/30 min-w-[160px]"
             >
               <span className={isRefreshing ? 'animate-spin' : ''}>
-                <Refresh size={18} variant="Bold" color="currentColor" />
+                <Refresh size={20} variant="Bold" color="currentColor" />
               </span>
               <span>{isFa ? 'به‌روزرسانی' : 'Refresh'}</span>
             </button>
           </div>
 
-          <div className="flex gap-2 flex-wrap mt-5">
+          <div className="flex gap-4 flex-wrap mt-8">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-2 font-medium ${
+                className={`px-6 py-3 rounded-2xl text-base transition-all flex items-center gap-3 font-semibold ${
                   selectedCategory === category.id
-                    ? 'bg-[#2383e2] text-white shadow-sm'
-                    : 'bg-[#f7f6f3] text-[#37352f] hover:bg-[#e9e9e7]'
+                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                    : 'bg-[#262626] text-gray-300 hover:bg-[#2a2a2a] hover:text-white border border-[#2a2a2a]'
                 }`}
               >
-                <span className="text-lg">{category.icon}</span>
+                <span className="text-xl">{category.icon}</span>
                 <span>{isFa ? category.nameFa : category.nameEn}</span>
               </button>
             ))}
@@ -215,7 +215,7 @@ export default function Home() {
         {/* Currency Grid */}
         {data && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCurrencies.map((currency) => (
                 <CurrencyCard
                   key={currency.key}
@@ -227,9 +227,9 @@ export default function Home() {
             </div>
 
             {filteredCurrencies.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground text-sm">
-                  {isFa ? 'نتیجه‌ای یافت نشد' : 'No results found.'}
+              <div className="text-center py-20">
+                <p className="text-gray-400 text-lg">
+                  {isFa ? 'نتیجه‌ای یافت نشد' : 'No results found'}
                 </p>
               </div>
             )}
@@ -237,36 +237,39 @@ export default function Home() {
         )}
 
         {/* Footer Info */}
-        <div className="mt-8 bg-white rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        <div className="mt-16 bg-[#1a1a1a] rounded-3xl p-10 border border-[#2a2a2a]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
             <div>
-              <h4 className="font-medium mb-2 text-sm text-[#37352f]">
-                {isFa ? '🔄 به‌روزرسانی خودکار' : '🔄 Auto refresh'}
+              <div className="text-4xl mb-4">🔄</div>
+              <h4 className="font-semibold mb-3 text-lg text-white">
+                {isFa ? 'به‌روزرسانی خودکار' : 'Auto Refresh'}
               </h4>
-              <p className="text-xs text-[#787774]">
+              <p className="text-sm text-gray-400 leading-relaxed">
                 {isFa
                   ? 'قیمت‌ها هر ۳۰ ثانیه به‌طور خودکار به‌روز می‌شوند'
-                  : 'Rates refresh automatically every 30 seconds.'}
+                  : 'Rates refresh automatically every 30 seconds'}
               </p>
             </div>
             <div>
-              <h4 className="font-medium mb-2 text-sm text-[#37352f]">
-                {isFa ? '📊 داده‌های دقیق' : '📊 Accurate data'}
+              <div className="text-4xl mb-4">📊</div>
+              <h4 className="font-semibold mb-3 text-lg text-white">
+                {isFa ? 'داده‌های دقیق' : 'Accurate Data'}
               </h4>
-              <p className="text-xs text-[#787774]">
+              <p className="text-sm text-gray-400 leading-relaxed">
                 {isFa
                   ? 'اطلاعات از منابع معتبر بازار ارز و طلا'
-                  : 'Aggregated from trusted FX and gold sources.'}
+                  : 'Aggregated from trusted FX and gold sources'}
               </p>
             </div>
             <div>
-              <h4 className="font-medium mb-2 text-sm text-[#37352f]">
-                {isFa ? '⚡ سرعت بالا' : '⚡ Fast performance'}
+              <div className="text-4xl mb-4">⚡</div>
+              <h4 className="font-semibold mb-3 text-lg text-white">
+                {isFa ? 'سرعت بالا' : 'Fast Performance'}
               </h4>
-              <p className="text-xs text-[#787774]">
+              <p className="text-sm text-gray-400 leading-relaxed">
                 {isFa
                   ? 'نمایش سریع و بهینه قیمت‌ها در لحظه'
-                  : 'Optimized to deliver prices instantly.'}
+                  : 'Optimized to deliver prices instantly'}
               </p>
             </div>
           </div>

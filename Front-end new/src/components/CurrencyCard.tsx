@@ -67,44 +67,47 @@ export function CurrencyCard({ currency, price, previousPrice }: CurrencyCardPro
   const unitLabel = isFa ? 'تومان' : 'Toman';
 
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          {currency.flag && <span className="text-3xl">{currency.flag}</span>}
+    <div className="rounded-3xl bg-[#1a1a1a] p-8 border border-[#2a2a2a] hover:border-[#3a3a3a] transition-all group">
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-4">
+          {currency.flag && <span className="text-4xl">{currency.flag}</span>}
           <div>
-            <h3 className="font-medium text-base text-[#37352f]">{isFa ? currency.nameFa : currency.nameEn}</h3>
-            <span className="text-xs text-[#787774]" dir="ltr">
+            <h3 className="font-semibold text-lg text-white mb-1">{isFa ? currency.nameFa : currency.nameEn}</h3>
+            <span className="text-sm text-gray-400" dir="ltr">
               {currency.symbol}
             </span>
           </div>
         </div>
         {priceChange !== null && (
           <div
-            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-              isIncreasing ? 'text-emerald-600' : 'text-rose-600'
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold ${
+              isIncreasing ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
             }`}
           >
             {isIncreasing ? (
-              <TrendUp size={14} variant="Bold" color="currentColor" />
+              <TrendUp size={16} variant="Bold" color="currentColor" />
             ) : (
-              <TrendDown size={14} variant="Bold" color="currentColor" />
+              <TrendDown size={16} variant="Bold" color="currentColor" />
             )}
-            <span>{Math.abs(priceChange).toFixed(1)}</span>
+            <span>{Math.abs(priceChange).toFixed(1)}%</span>
           </div>
         )}
       </div>
 
-      <div className="mb-3">
-        <div className="text-2xl font-semibold text-[#37352f]">
+      <div className="mb-6">
+        <div className="text-3xl font-bold text-white mb-2">
           {formatPrice(price)}
         </div>
-        <span className="text-xs text-[#787774]">
+        <span className="text-sm text-gray-400">
           {unitLabel}
         </span>
       </div>
 
-      <div className="h-1 w-full bg-[#f7f6f3] rounded-full overflow-hidden">
-        <div className={`h-full ${isIncreasing ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: '60%' }}></div>
+      <div className="h-2 w-full bg-[#0a0a0a] rounded-full overflow-hidden">
+        <div 
+          className={`h-full transition-all ${isIncreasing ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-blue-500 to-blue-400'}`} 
+          style={{ width: '65%' }}
+        ></div>
       </div>
     </div>
   );

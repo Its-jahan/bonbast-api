@@ -5,26 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority@0.7.1";
 import { cn } from "./utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-base font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50",
   {
     variants: {
       variant: {
-        default: "bg-[#2383e2] text-white hover:bg-[#1a6ec7] shadow-sm hover:shadow-md",
+        default: "bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/30",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 shadow-sm",
+          "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30",
         outline:
-          "border border-[#e9e9e7] bg-white text-[#37352f] hover:bg-[#f7f6f3] hover:border-[#d3d3d1]",
+          "border-2 border-[#2a2a2a] bg-[#1a1a1a] text-white hover:bg-[#262626] hover:border-[#3a3a3a]",
         secondary:
-          "bg-[#f7f6f3] text-[#37352f] hover:bg-[#e9e9e7]",
+          "bg-[#262626] text-white hover:bg-[#2a2a2a]",
         ghost:
-          "hover:bg-[#f7f6f3] hover:text-[#37352f]",
-        link: "text-[#2383e2] underline-offset-4 hover:underline",
+          "hover:bg-[#1a1a1a] hover:text-white text-gray-400",
+        link: "text-blue-400 underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-11 px-5 py-2 has-[>svg]:px-4",
-        sm: "h-9 rounded-lg gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-12 rounded-xl px-6 has-[>svg]:px-5",
-        icon: "size-11 rounded-xl",
+        default: "h-14 px-8 py-3",
+        sm: "h-11 rounded-xl gap-2 px-5",
+        lg: "h-16 rounded-2xl px-10",
+        icon: "size-14 rounded-2xl",
       },
     },
     defaultVariants: {
