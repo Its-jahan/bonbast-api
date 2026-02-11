@@ -52,3 +52,32 @@ export interface CurrencyItem {
   flag?: string;
   category: 'currency' | 'gold' | 'coin' | 'crypto';
 }
+
+export interface Plan {
+  slug: string;
+  scope: 'all' | 'currency' | 'crypto' | 'gold';
+  name: string;
+  monthly_quota: number;
+  rpm_limit: number;
+  price_irr: number;
+}
+
+export interface ApiKey {
+  api_key_id: number;
+  api_key: string;
+  api_url: string;
+  masked: string;
+  status: string;
+  created_at: string;
+  plan: {
+    slug: string;
+    scope: string;
+    name: string;
+  };
+  usage: {
+    month: string;
+    request_count: number;
+    monthly_quota: number;
+    remaining: number;
+  };
+}

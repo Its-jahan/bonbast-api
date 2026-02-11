@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'IranyekanX';
+  src: url('https://cdn.jsdelivr.net/gh/textamir/iranyekan@v4.0.0/woff2/IranyekanX-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IranyekanX';
+  src: url('https://cdn.jsdelivr.net/gh/textamir/iranyekan@v4.0.0/woff2/IranyekanX-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --font-sans: 'IranyekanX', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    direction: rtl;
+  }
+
+  h1 {
+    @apply text-4xl font-bold;
+  }
+
+  h2 {
+    @apply text-3xl font-bold;
+  }
+
+  h3 {
+    @apply text-2xl font-bold;
+  }
+
+  h4 {
+    @apply text-xl font-bold;
+  }
+
+  h5 {
+    @apply text-lg font-bold;
+  }
+
+  h6 {
+    @apply text-base font-bold;
+  }
+
+  /* Custom scrollbar for dark mode */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-[#1a1a1a];
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#3a3a3a] rounded-md;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#4a4a4a];
+  }
+}
+
+@theme {
+  /* Dark Mode Colors - Notion Style */
+  --color-background: #191919;
+  --color-foreground: #e3e3e3;
+  --color-card: #1f1f1f;
+  --color-card-foreground: #e3e3e3;
+  --color-primary: #2eaadc;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #2a2a2a;
+  --color-secondary-foreground: #e3e3e3;
+  --color-accent: #37352f;
+  --color-accent-foreground: #ffffff;
+  --color-muted: #2a2a2a;
+  --color-muted-foreground: #9b9a97;
+  --color-destructive: #eb5757;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #2f2f2f;
+  --color-input: #2a2a2a;
+  --color-ring: #2eaadc;
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  
+  /* Additional Notion-like colors */
+  --color-notion-blue: #2eaadc;
+  --color-notion-purple: #9b51e0;
+  --color-notion-pink: #e91e63;
+  --color-notion-red: #eb5757;
+  --color-notion-orange: #f2994a;
+  --color-notion-yellow: #f2c94c;
+  --color-notion-green: #27ae60;
+  --color-notion-gray: #7c7c7c;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Notion-style hover effects */
+.notion-hover {
+  @apply transition-all duration-200 hover:bg-accent/50;
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(42, 42, 42, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #2eaadc 0%, #9b51e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

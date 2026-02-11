@@ -1,620 +1,309 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router';
+import { Copy, TickCircle, Key, Link2, Calendar, Activity, ArrowRight, Refresh } from 'iconsax-react';
 import { Header } from '../components/Header';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
-import { AddCircle, Copy, CopySuccess, KeySquare, Link2 } from 'iconsax-react';
-import { useLanguage } from '../contexts/LanguageContext';
-
-const SCOPE_LABELS: Record<string, { en: string; fa: string }> = {
-  all: { en: 'All APIs', fa: 'API همه' },
-  currency: { en: 'Currency API', fa: 'API ارز' },
-  crypto: { en: 'Crypto API', fa: 'API ارز دیجیتال' },
-  gold: { en: 'Gold API', fa: 'API طلا' },
-};
-
-type ApiKeyItem = {
-  api_key_id: number;
-  api_key?: string;
-  api_url?: string;
-  masked: string;
-  status: string;
-  created_at: string;
-  plan: { slug: string; scope: string; name: string };
-  usage: {
-    month: string;
-    request_count: number;
-    monthly_quota: number;
-    remaining: number;
-  };
-  is_demo?: boolean;
-};
-
-type Plan = {
-  slug: string;
-  scope: string;
-  name: string;
-  monthly_quota: number;
-  rpm_limit: number;
-  price_irr: number;
-};
-
-type ApiError = Error & { status?: number };
-
-const DEMO_STORAGE_KEY = 'demo_api_keys';
-const DEMO_REQUESTS_ADDON = 5000;
-
-const buildMaskedKey = (apiKey: string) => {
-  const prefix = apiKey.split('_', 1)[0];
-  const last4 = apiKey.slice(-4);
-  return `${prefix}_…${last4}`;
-};
-
-const getMonthKey = () => new Date().toISOString().slice(0, 7);
-
-const getApiBaseUrl = () => {
-  if (typeof window === 'undefined') return '/api';
-  return `${window.location.origin}/api`;
-};
-
-const buildApiUrl = (apiKey: string) => `${getApiBaseUrl()}/v1/key/${apiKey}/prices`;
-
-const loadDemoKeys = (): ApiKeyItem[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(DEMO_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as ApiKeyItem[];
-    return parsed.map((item) => ({
-      ...item,
-      api_url: item.api_url ?? (item.api_key ? buildApiUrl(item.api_key) : undefined),
-    }));
-  } catch {
-    return [];
-  }
-};
-
-const saveDemoKeys = (items: ApiKeyItem[]) => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(items));
-};
-
-const isAuthError = (error: unknown) => (error as ApiError)?.status === 401;
-
-async function apiFetch(
-  path: string,
-  options: RequestInit & { token?: string } = {}
-) {
-  const { token, ...init } = options;
-  const res = await fetch(`/api${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...(init.headers as Record<string, string>),
-    },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const apiError = new Error(err.error || res.statusText) as ApiError;
-    apiError.status = res.status;
-    throw apiError;
-  }
-  return res.json();
-}
+import { RequestCounter } from '../components/RequestCounter';
+import { useAuth } from '../contexts/AuthContext';
+import { apiCall, API_CONFIG } from '../config/api';
+import type { ApiKey } from '../types';
 
 export default function Dashboard() {
-  const { user, session, signOut } = useAuth();
-  const { language } = useLanguage();
-  const isFa = language === 'fa';
-  const [keys, setKeys] = useState<ApiKeyItem[]>([]);
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const navigate = useNavigate();
+  const { user, session, loading: authLoading } = useAuth();
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [purchasing, setPurchasing] = useState(false);
-  const [purchasingPlan, setPurchasingPlan] = useState<string | null>(null);
-  const [newApiKey, setNewApiKey] = useState<string | null>(null);
-  const [newApiUrl, setNewApiUrl] = useState<string | null>(null);
-  const [addRequestsKeyId, setAddRequestsKeyId] = useState<number | null>(null);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-
-  const token = session?.access_token;
-
-  const fetchKeys = async () => {
-    if (demoMode) {
-      setKeys(loadDemoKeys());
-      return;
-    }
-    if (!token) return;
-    try {
-      const data = await apiFetch('/me/keys', { token });
-      setKeys(data.keys);
-    } catch (e) {
-      if (isAuthError(e)) {
-        setDemoMode(true);
-        setKeys(loadDemoKeys());
-        return;
-      }
-      setKeys([]);
-    }
-  };
-
-  const fetchPlans = async () => {
-    try {
-      const data = await apiFetch('/plans');
-      setPlans(data.plans);
-    } catch {
-      setPlans([]);
-    }
-  };
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    Promise.all([fetchKeys(), fetchPlans()])
-      .finally(() => setLoading(false))
-      .catch((e) => setError(e.message));
-  }, [token]);
-
-  const handlePurchase = async (plan: Plan) => {
-    if (!token && !user?.email) return;
-    setPurchasing(true);
-    setPurchasingPlan(plan.slug);
-    setError('');
-    try {
-      const data = await apiFetch('/me/purchase', {
-        method: 'POST',
-        body: JSON.stringify({ plan_slug: plan.slug }),
-        token,
-      });
-      setNewApiKey(data.api_key);
-      setNewApiUrl(data.api_url ?? buildApiUrl(data.api_key));
-      await fetchKeys();
-    } catch (e) {
-      if (isAuthError(e)) {
-        const demoEmail =
-          user?.email?.trim() || `demo+${user?.id ?? 'user'}@example.com`;
-        try {
-          const data = await apiFetch('/purchase', {
-            method: 'POST',
-            body: JSON.stringify({ plan_slug: plan.slug, email: demoEmail }),
-          });
-          const apiUrl = data.api_url ?? buildApiUrl(data.api_key);
-          const demoKey: ApiKeyItem = {
-            api_key_id: Date.now(),
-            api_key: data.api_key,
-            api_url: apiUrl,
-            masked: buildMaskedKey(data.api_key),
-            status: 'active',
-            created_at: new Date().toISOString(),
-            plan: { slug: plan.slug, scope: plan.scope, name: plan.name },
-            usage: {
-              month: getMonthKey(),
-              request_count: 0,
-              monthly_quota: plan.monthly_quota,
-              remaining: plan.monthly_quota,
-            },
-            is_demo: true,
-          };
-          const nextKeys = [demoKey, ...loadDemoKeys()];
-          saveDemoKeys(nextKeys);
-          setDemoMode(true);
-          setKeys(nextKeys);
-          setNewApiKey(data.api_key);
-          setNewApiUrl(apiUrl);
-          return;
-        } catch (demoError) {
-          setError(
-            demoError instanceof Error
-              ? demoError.message
-              : isFa
-                ? 'خطایی رخ داد.'
-                : 'Something went wrong.'
-          );
-          return;
-        }
-      }
-      setError(e instanceof Error ? e.message : isFa ? 'خطایی رخ داد.' : 'Something went wrong.');
-    } finally {
-      setPurchasing(false);
-      setPurchasingPlan(null);
+    if (!authLoading && !user) {
+      navigate('/login');
+      return;
     }
+
+    if (user && session) {
+      loadApiKeys();
+    }
+  }, [user, session, authLoading, navigate]);
+
+  const loadApiKeys = async () => {
+    if (!session?.access_token) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiCall(
+        API_CONFIG.ENDPOINTS.MY_KEYS,
+        {},
+        session.access_token
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to load API keys');
+      }
+
+      const data = await response.json();
+      setApiKeys(data.keys || []);
+    } catch (err) {
+      console.error('Load API keys error:', err);
+      setError(err instanceof Error ? err.message : 'خطا در بارگذاری کلیدها');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(id);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const handleAddRequests = async (apiKeyId: number) => {
-    if (demoMode) {
-      setAddRequestsKeyId(apiKeyId);
-      const existing = loadDemoKeys();
-      const updated = existing.map((item) => {
-        if (item.api_key_id !== apiKeyId) return item;
-        const nextQuota = item.usage.monthly_quota + DEMO_REQUESTS_ADDON;
-        const nextRemaining = item.usage.remaining + DEMO_REQUESTS_ADDON;
-        return {
-          ...item,
-          usage: {
-            ...item.usage,
-            monthly_quota: nextQuota,
-            remaining: nextRemaining,
-          },
-        };
-      });
-      saveDemoKeys(updated);
-      setKeys(updated);
-      setAddRequestsKeyId(null);
-      return;
-    }
-    if (!token) return;
-    setAddRequestsKeyId(apiKeyId);
-    setError('');
+    if (!session?.access_token) return;
+    
     try {
-      await apiFetch(`/me/keys/${apiKeyId}/add-requests`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-        token,
-      });
-      fetchKeys();
-    } catch (e) {
-      if (isAuthError(e)) {
-        setDemoMode(true);
-        setKeys(loadDemoKeys());
-        setAddRequestsKeyId(null);
-        return;
+      const response = await apiCall(
+        `${API_CONFIG.ENDPOINTS.ADD_REQUESTS}/${apiKeyId}/add-requests`,
+        { method: 'POST' },
+        session.access_token
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to add requests');
       }
-      setError(e instanceof Error ? e.message : isFa ? 'خطایی رخ داد.' : 'Something went wrong.');
-    } finally {
-      setAddRequestsKeyId(null);
+
+      // Reload API keys to show updated quota
+      await loadApiKeys();
+    } catch (err) {
+      console.error('Add requests error:', err);
+      alert('خطا در افزودن درخواست‌ها');
     }
   };
 
-  const handleCopy = async (value: string, token: string) => {
-    if (!value) return;
-    const successMessage = isFa ? 'کپی شد' : 'Copied';
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(value);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = value;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        if (!ok) throw new Error('copy failed');
-      }
-      setCopiedToken(token);
-      setTimeout(() => setCopiedToken(null), 2000);
-    } catch {
-      setError(isFa ? 'کپی انجام نشد. دوباره تلاش کنید.' : 'Copy failed. Please try again.');
-      setCopiedToken(null);
-    }
-  };
+  if (authLoading || loading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen flex items-center justify-center bg-[#fafafa]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">در حال بارگذاری...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen flex items-center justify-center bg-[#fafafa]">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={loadApiKeys}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+            >
+              تلاش مجدد
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
       <Header />
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold text-[#37352f]">{isFa ? 'داشبورد' : 'Dashboard'}</h1>
-            <p className="text-[#787774] text-sm">{user?.email}</p>
-            {demoMode && (
-              <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 border border-amber-200">
-                {isFa ? 'حالت دمو (احراز هویت غیرفعال)' : 'Demo mode (auth unavailable)'}
-              </span>
-            )}
+      
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/')}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
+              >
+                <ArrowRight size={20} />
+              </button>
+              <div>
+                <h1 className="text-4xl font-bold text-[#37352f]">داشبورد</h1>
+                <p className="text-gray-600 mt-1">مدیریت API Keys و آمار مصرف</p>
+              </div>
+            </div>
+            <button
+              onClick={loadApiKeys}
+              className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all"
+            >
+              <Refresh size={18} />
+              <span>به‌روزرسانی</span>
+            </button>
           </div>
-          <Button variant="outline" onClick={signOut} className="h-10 text-sm">
-            {isFa ? 'خروج' : 'Sign out'}
-          </Button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-xl text-sm border border-destructive/20">
-            {error}
+        {apiKeys.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-white border border-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <Key size={48} className="text-gray-400" variant="Bold" />
+            </div>
+            <h2 className="text-2xl font-bold mb-3 text-[#37352f]">هنوز API نخریده‌اید</h2>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              برای شروع، یکی از پلن‌های API را خریداری کنید
+            </p>
+            <button
+              onClick={() => navigate('/shop')}
+              className="bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20"
+            >
+              مشاهده پلن‌ها
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {apiKeys.map((apiKey) => (
+              <div
+                key={apiKey.api_key_id}
+                className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-blue-300 transition-all shadow-sm"
+              >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold mb-1 text-[#37352f]">{apiKey.plan.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {apiKey.plan.scope === 'all' ? 'همه داده‌ها' : 
+                         apiKey.plan.scope === 'currency' ? 'ارزها' :
+                         apiKey.plan.scope === 'gold' ? 'طلا و سکه' :
+                         apiKey.plan.scope === 'crypto' ? 'ارز دیجیتال' : 
+                         apiKey.plan.scope}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold">
+                      <TickCircle size={18} variant="Bold" />
+                      <span>فعال</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Left Column - API Details */}
+                    <div className="space-y-6">
+                      {/* Secret Key */}
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
+                          <Key size={16} />
+                          API Key
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-mono text-sm break-all">
+                            {apiKey.api_key}
+                          </div>
+                          <button
+                            onClick={() => handleCopy(apiKey.api_key, `key-${apiKey.api_key_id}`)}
+                            className="px-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all"
+                          >
+                            {copiedKey === `key-${apiKey.api_key_id}` ? (
+                              <TickCircle size={20} className="text-green-600" variant="Bold" />
+                            ) : (
+                              <Copy size={20} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Request URL */}
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
+                          <Link2 size={16} />
+                          Request URL
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-mono text-sm break-all">
+                            {apiKey.api_url}
+                          </div>
+                          <button
+                            onClick={() => handleCopy(apiKey.api_url, `url-${apiKey.api_key_id}`)}
+                            className="px-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all"
+                          >
+                            {copiedKey === `url-${apiKey.api_key_id}` ? (
+                              <TickCircle size={20} className="text-green-600" variant="Bold" />
+                            ) : (
+                              <Copy size={20} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Created Date */}
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
+                          <Calendar size={16} />
+                          تاریخ ایجاد
+                        </label>
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                          {new Date(apiKey.created_at).toLocaleDateString('fa-IR')}
+                        </div>
+                      </div>
+
+                      {/* Add Requests Button */}
+                      <button
+                        onClick={() => handleAddRequests(apiKey.api_key_id)}
+                        className="w-full bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 font-medium"
+                      >
+                        افزودن 5,000 درخواست (دمو)
+                      </button>
+                    </div>
+
+                    {/* Right Column - Usage Stats */}
+                    <div className="space-y-6">
+                      {/* Request Counter */}
+                      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                        <RequestCounter
+                          used={apiKey.usage.request_count}
+                          total={apiKey.usage.monthly_quota}
+                        />
+                      </div>
+
+                      {/* Additional Stats */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Activity size={18} className="text-blue-600" />
+                            <p className="text-xs text-gray-600">باقیمانده</p>
+                          </div>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {apiKey.usage.remaining.toLocaleString('fa-IR')}
+                          </p>
+                        </div>
+
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Activity size={18} className="text-green-600" />
+                            <p className="text-xs text-gray-600">کل سهمیه</p>
+                          </div>
+                          <p className="text-2xl font-bold text-green-600">
+                            {apiKey.usage.monthly_quota.toLocaleString('fa-IR')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Month Info */}
+                      <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6 text-center">
+                        <p className="text-sm text-gray-600 mb-2">دوره فعلی</p>
+                        <p className="text-2xl font-bold text-[#37352f]">
+                          {apiKey.usage.month}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-
-        <div className="space-y-8">
-          {/* API Keys */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-[#37352f]">{isFa ? 'کلیدهای API من' : 'My API Keys'}</h2>
-            </div>
-            {loading ? (
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                {isFa ? 'در حال بارگذاری...' : 'Loading...'}
-              </div>
-            ) : keys.length === 0 ? (
-              <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.08)] rounded-2xl border-0">
-                <CardContent className="py-8 text-center text-[#787774] text-sm">
-                  {isFa
-                    ? 'هنوز هیچ کلید API ندارید. یک پلن بخرید تا شروع کنید.'
-                    : 'You do not have any API keys yet. Buy a plan to get started.'}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {keys.map((k) => {
-                  const apiUrl = k.api_url ?? (k.api_key ? buildApiUrl(k.api_key) : undefined);
-                  return (
-                    <Card key={k.api_key_id} className="shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all rounded-2xl border-0">
-                      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-primary">
-                              <KeySquare size={16} variant="Bold" color="currentColor" />
-                            </span>
-                            <CardTitle className="text-sm font-medium">
-                              {(SCOPE_LABELS[k.plan.scope]?.[isFa ? 'fa' : 'en']) || k.plan.name}
-                            </CardTitle>
-                          </div>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            {k.masked}
-                          </p>
-                        </div>
-                        {apiUrl && (
-                          <div className="flex items-center gap-1.5 rounded-md border border-[#e9e9e7] bg-[#f7f6f3] px-2 py-1 text-xs text-muted-foreground">
-                            <Link2 size={12} variant="Bold" color="currentColor" />
-                            <span>{isFa ? 'لینک API' : 'API link'}</span>
-                          </div>
-                        )}
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-1.5">
-                          <p className="text-xs font-medium text-muted-foreground">
-                            {isFa ? 'کلید API' : 'API Key'}
-                          </p>
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <code className="flex-1 rounded-md border border-[#e9e9e7] bg-[#f7f6f3] px-2.5 py-2 text-xs break-all font-mono" dir="ltr">
-                              {k.api_key ?? k.masked}
-                            </code>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopy(k.api_key ?? '', `key-${k.api_key_id}`)}
-                              disabled={!k.api_key}
-                              className="gap-1 border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-8 text-xs"
-                              type="button"
-                            >
-                              {copiedToken === `key-${k.api_key_id}` ? (
-                                <CopySuccess size={14} variant="Bold" color="currentColor" />
-                              ) : (
-                                <Copy size={14} variant="Bold" color="currentColor" />
-                              )}
-                              {copiedToken === `key-${k.api_key_id}`
-                                ? isFa
-                                  ? 'کپی شد'
-                                  : 'Copied'
-                                : isFa
-                                  ? 'کپی'
-                                  : 'Copy'}
-                            </Button>
-                          </div>
-                        </div>
-
-                        {apiUrl && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-muted-foreground">
-                              {isFa ? 'آدرس API' : 'API URL'}
-                            </p>
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                              <code className="flex-1 rounded-md border border-[#e9e9e7] bg-[#f7f6f3] px-2.5 py-2 text-xs break-all font-mono" dir="ltr">
-                                {apiUrl}
-                              </code>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCopy(apiUrl, `url-inline-${k.api_key_id}`)}
-                                className="gap-1 border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-8 text-xs"
-                                type="button"
-                              >
-                                {copiedToken === `url-inline-${k.api_key_id}` ? (
-                                  <CopySuccess size={14} variant="Bold" color="currentColor" />
-                                ) : (
-                                  <Copy size={14} variant="Bold" color="currentColor" />
-                                )}
-                                {copiedToken === `url-inline-${k.api_key_id}`
-                                  ? isFa
-                                    ? 'کپی شد'
-                                    : 'Copied'
-                                  : isFa
-                                    ? 'کپی'
-                                    : 'Copy'}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>
-                              {isFa ? 'مصرف ماهانه' : 'Monthly usage'} ({k.usage.month})
-                            </span>
-                            <span className="font-medium tabular-nums text-foreground">
-                              {k.usage.request_count.toLocaleString(isFa ? 'fa-IR' : 'en-US')} /{' '}
-                              {k.usage.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-primary transition-all"
-                                style={{
-                                  width: `${Math.min(
-                                    100,
-                                    (k.usage.request_count / k.usage.monthly_quota) * 100
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {k.usage.remaining.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
-                            {isFa ? 'درخواست باقی‌مانده' : 'requests remaining'}
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-8 text-xs"
-                          onClick={() => handleAddRequests(k.api_key_id)}
-                          disabled={addRequestsKeyId === k.api_key_id}
-                        >
-                          {addRequestsKeyId === k.api_key_id ? (
-                            <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <AddCircle size={14} variant="Bold" color="currentColor" />
-                          )}
-                          <span className="ml-1">
-                            {isFa ? 'خرید ۵۰۰۰ درخواست (دمو)' : 'Buy 5,000 requests (demo)'}
-                          </span>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* Purchase new plan */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-[#37352f]">{isFa ? 'خرید کلید API جدید' : 'Buy a New API Key'}</h2>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {plans.map((plan) => (
-                <Card
-                  key={plan.slug}
-                  className="hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all shadow-[0_1px_3px_rgba(0,0,0,0.08)] rounded-2xl border-0"
-                >
-                  <CardHeader className="space-y-1.5 pb-3">
-                    <CardTitle className="text-sm font-medium">
-                      {(SCOPE_LABELS[plan.scope]?.[isFa ? 'fa' : 'en']) || plan.name}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      {plan.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
-                      {isFa ? 'درخواست/ماه' : 'requests/month'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {plan.rpm_limit.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
-                      {isFa ? 'درخواست در دقیقه' : 'rpm limit'}
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <Button
-                      className="w-full h-8 text-xs"
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handlePurchase(plan);
-                      }}
-                      disabled={purchasing && purchasingPlan === plan.slug}
-                    >
-                      {purchasing && purchasingPlan === plan.slug ? (
-                        <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : null}
-                      <span>
-                        {purchasing && purchasingPlan === plan.slug
-                          ? isFa
-                            ? 'در حال پردازش...'
-                            : 'Processing...'
-                          : isFa
-                            ? 'خرید (دمو)'
-                            : 'Buy (demo)'}
-                      </span>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* New API Key dialog */}
-        <Dialog
-          open={!!newApiKey}
-          onOpenChange={(open) => {
-            if (!open) {
-              setNewApiKey(null);
-              setNewApiUrl(null);
-              setCopiedToken(null);
-            }
-          }}
-        >
-          <DialogContent className="border-[#e9e9e7]">
-            <DialogHeader>
-              <DialogTitle className="text-base">{isFa ? 'کلید API شما' : 'Your API Key'}</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              {isFa
-                ? 'این کلید فقط یک‌بار نمایش داده می‌شود. همین حالا کپی کنید.'
-                : 'This key is shown only once. Copy it now.'}
-            </p>
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <code className="flex-1 p-2.5 bg-[#f7f6f3] border border-[#e9e9e7] rounded-md text-xs break-all font-mono" dir="ltr">
-                  {newApiKey}
-                </code>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleCopy(newApiKey ?? '', 'dialog-key')}
-                  type="button"
-                  className="h-9 w-9 border-[#e9e9e7]"
-                >
-                  {copiedToken === 'dialog-key' ? (
-                    <CopySuccess size={16} variant="Bold" color="currentColor" />
-                  ) : (
-                    <Copy size={16} variant="Bold" color="currentColor" />
-                  )}
-                </Button>
-              </div>
-              {newApiUrl && (
-                <div className="flex gap-2">
-                  <code className="flex-1 p-2.5 bg-[#f7f6f3] border border-[#e9e9e7] rounded-md text-xs break-all font-mono" dir="ltr">
-                    {newApiUrl}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleCopy(newApiUrl, 'dialog-url')}
-                    type="button"
-                    className="h-9 w-9 border-[#e9e9e7]"
-                  >
-                    {copiedToken === 'dialog-url' ? (
-                      <CopySuccess size={16} variant="Bold" color="currentColor" />
-                    ) : (
-                      <Copy size={16} variant="Bold" color="currentColor" />
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-            <Button
-              onClick={() => {
-                setNewApiKey(null);
-                setNewApiUrl(null);
-              }}
-              className="h-9 bg-[#191919] hover:bg-[#2f2f2f]"
-            >
-              {isFa ? 'متوجه شدم' : 'Got it'}
-            </Button>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

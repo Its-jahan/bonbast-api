@@ -1,10 +1,11 @@
 import type { ComponentType } from 'react';
+import type { IconProps } from 'iconsax-react';
 
 interface StatCardProps {
-  icon: ComponentType<{ size?: number; variant?: string; color?: string; className?: string }>;
+  icon: ComponentType<IconProps>;
   label: string;
   value: string;
-  unit: string;
+  unit?: string;
   color: string;
 }
 
@@ -19,7 +20,7 @@ export function StatCard({ icon: Icon, label, value, unit, color }: StatCardProp
       <div>
         <p className="text-sm text-white/80 mb-2 font-medium">{label}</p>
         <p className="text-3xl font-bold text-white mb-1">{value}</p>
-        <p className="text-sm text-white/60">{unit}</p>
+        {unit && <p className="text-sm text-white/60">{unit}</p>}
       </div>
     </div>
   );
