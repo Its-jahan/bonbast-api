@@ -16,18 +16,24 @@ docker-compose up -d --build
 ## مسیرهای API (از طریق Nginx)
 
 - عمومی (بدون کلید): `GET /api/prices`
-- پولی/متری (با کلید): `GET /api/v1/prices` با هدر `x-api-key`
-- لیست پلن‌ها: `GET /api/plans`
-- صدور کلید (Demo، بدون پرداخت): `POST /api/purchase` با بدنه:
-  - `{"email":"you@example.com","plan_slug":"starter"}`
-- نمایش مصرف (بدون شمارش در سهمیه): `GET /api/self/usage` با هدر `x-api-key`
-- تعویض کلید (revoke قبلی + صدور جدید): `POST /api/self/rotate` با هدر `x-api-key`
+- پولی/متری (با کلید، فیلتر بر اساس scope): `GET /api/v1/prices` با هدر `x-api-key`
+- لیست پلن‌ها: `GET /api/plans` (شامل scope: all, currency, crypto, gold)
+- صدور کلید (legacy): `POST /api/purchase` با بدنه `{"email":"...","plan_slug":"..."}`
+
+**با احراز هویت Supabase (هدر `Authorization: Bearer <jwt>`):**
+- خرید پلن: `POST /api/me/purchase` با بدنه `{"plan_slug":"all-starter"}`
+- لیست کلیدهای من: `GET /api/me/keys`
+- خرید ریکوئست اضافه: `POST /api/me/keys/<id>/add-requests`
+
+- نمایش مصرف: `GET /api/self/usage` با هدر `x-api-key`
+- تعویض کلید: `POST /api/self/rotate` با هدر `x-api-key`
 
 ## تنظیمات API Manager
 
-در `docker-compose.yml` مسیر دیتابیس و pepper در ولوم `./data` ذخیره می‌شود:
+در `docker-compose.yml`:
 - `API_DB_PATH=/data/api_manager.db`
 - `API_KEY_PEPPER_PATH=/data/api_key_pepper`
+- `SUPABASE_JWT_SECRET`: از Supabase Dashboard > Project Settings > API > JWT Secret کپی کنید (برای اندپوینت‌های `/me/*`)
 
 برای اندپوینت ادمین:
 - `ADMIN_TOKEN` را ست کنید و سپس `GET /api/admin/keys` را با هدر `x-admin-token` صدا بزنید.

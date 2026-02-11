@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, g, jsonify
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -73,6 +73,22 @@ TARGETS = {
     "bitcoin": "bitcoin"        # بیت‌کوین
 }
 
+# محدوده هر scope برای فیلتر خروجی API
+SCOPE_KEYS = {
+    "currency": ["usd", "eur", "gbp", "chf", "cad", "aud", "sek", "nok", "rub", "thb", "sgd", "hkd", "azn", "amd",
+                 "dkk", "aed", "jpy", "try", "cny", "sar", "inr", "myr", "afn", "kwd", "iqd", "bhd", "omr", "qar"],
+    "crypto": ["bitcoin"],
+    "gold": ["gold_ounce", "gold_gram_18k", "gold_mithqal", "coin_emami", "coin_azadi", "coin_half", "coin_quarter", "coin_gram"],
+}
+
+
+def _filter_prices_by_scope(data: dict, scope: str) -> dict:
+    if scope == "all" or not scope:
+        return data
+    keys = SCOPE_KEYS.get(scope, [])
+    return {k: v for k, v in data.items() if k in keys}
+
+
 def create_driver():
     options = Options()
     options.add_argument("--headless")
@@ -133,8 +149,13 @@ def get_prices():
 @app.route('/v1/prices', methods=['GET'])
 @require_metered_api_key
 def get_prices_v1():
-    # Same payload shape as /prices, but protected with an API key.
-    return jsonify(LATEST_PRICES)
+    scope = g.api_key.get("scope") or "all"
+    filtered_data = _filter_prices_by_scope(LATEST_PRICES.get("data", {}), scope)
+    return jsonify({
+        "data": filtered_data,
+        "last_updated": LATEST_PRICES.get("last_updated"),
+        "status": LATEST_PRICES.get("status"),
+    })
 
 @app.route('/health', methods=['GET'])
 def health():

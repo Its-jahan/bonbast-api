@@ -5,38 +5,25 @@ import os as _os
 import secrets as _secrets
 import sqlite3 as _sqlite3
 
+import jwt as _jwt
 from flask import Blueprint, current_app, g, jsonify, request
-
 
 bp = Blueprint("api_manager", __name__)
 
+# scope: all | currency | crypto | gold
+SCOPES = ("all", "currency", "crypto", "gold")
 
 DEFAULT_PLANS = [
-    {
-        "slug": "starter",
-        "name": "پلن استارتر",
-        "monthly_quota": 300_000,
-        "rpm_limit": 120,
-        "price_irr": 0,
-        "active": 1,
-    },
-    {
-        "slug": "business",
-        "name": "پلن تجاری",
-        "monthly_quota": 1_000_000,
-        "rpm_limit": 600,
-        "price_irr": 0,
-        "active": 1,
-    },
-    {
-        "slug": "enterprise",
-        "name": "پلن سازمانی",
-        "monthly_quota": 10_000_000,
-        "rpm_limit": 2_000,
-        "price_irr": 0,
-        "active": 1,
-    },
+    {"slug": "all-starter", "scope": "all", "name": "API همه - استارتر", "monthly_quota": 10_000, "rpm_limit": 60, "price_irr": 0, "active": 1},
+    {"slug": "all-business", "scope": "all", "name": "API همه - تجاری", "monthly_quota": 100_000, "rpm_limit": 300, "price_irr": 0, "active": 1},
+    {"slug": "currency-starter", "scope": "currency", "name": "API ارز - استارتر", "monthly_quota": 10_000, "rpm_limit": 60, "price_irr": 0, "active": 1},
+    {"slug": "currency-business", "scope": "currency", "name": "API ارز - تجاری", "monthly_quota": 100_000, "rpm_limit": 300, "price_irr": 0, "active": 1},
+    {"slug": "crypto-starter", "scope": "crypto", "name": "API ارز دیجیتال - استارتر", "monthly_quota": 10_000, "rpm_limit": 60, "price_irr": 0, "active": 1},
+    {"slug": "crypto-business", "scope": "crypto", "name": "API ارز دیجیتال - تجاری", "monthly_quota": 100_000, "rpm_limit": 300, "price_irr": 0, "active": 1},
+    {"slug": "gold-starter", "scope": "gold", "name": "API طلا - استارتر", "monthly_quota": 10_000, "rpm_limit": 60, "price_irr": 0, "active": 1},
+    {"slug": "gold-business", "scope": "gold", "name": "API طلا - تجاری", "monthly_quota": 100_000, "rpm_limit": 300, "price_irr": 0, "active": 1},
 ]
+ADDON_EXTRA_REQUESTS = 5_000  # تعداد ریکوئست هر بسته افزودنی
 
 
 def _utcnow_iso() -> str:
@@ -124,6 +111,24 @@ def _generate_api_key() -> str:
     return f"bb_{_secrets.token_urlsafe(32)}"
 
 
+def _run_migrations(db: _sqlite3.Connection) -> None:
+    """Add scope to plans, supabase_user_id to customers, extra_quota to usage_monthly."""
+    try:
+        db.execute("SELECT scope FROM plans LIMIT 1;")
+    except _sqlite3.OperationalError:
+        db.execute("ALTER TABLE plans ADD COLUMN scope TEXT NOT NULL DEFAULT 'all';")
+
+    try:
+        db.execute("SELECT supabase_user_id FROM customers LIMIT 1;")
+    except _sqlite3.OperationalError:
+        db.execute("ALTER TABLE customers ADD COLUMN supabase_user_id TEXT;")
+
+    try:
+        db.execute("SELECT extra_quota FROM usage_monthly LIMIT 1;")
+    except _sqlite3.OperationalError:
+        db.execute("ALTER TABLE usage_monthly ADD COLUMN extra_quota INTEGER NOT NULL DEFAULT 0;")
+
+
 def init_db() -> None:
     db_path = _get_db_path()
     _ensure_parent_dir(db_path)
@@ -135,6 +140,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS plans (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               slug TEXT NOT NULL UNIQUE,
+              scope TEXT NOT NULL DEFAULT 'all',
               name TEXT NOT NULL,
               monthly_quota INTEGER NOT NULL,
               rpm_limit INTEGER NOT NULL,
@@ -145,7 +151,8 @@ def init_db() -> None:
 
             CREATE TABLE IF NOT EXISTS customers (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
-              email TEXT NOT NULL UNIQUE,
+              email TEXT NOT NULL,
+              supabase_user_id TEXT UNIQUE,
               created_at TEXT NOT NULL
             );
 
@@ -165,10 +172,12 @@ def init_db() -> None:
               api_key_id INTEGER NOT NULL REFERENCES api_keys(id),
               month TEXT NOT NULL,
               request_count INTEGER NOT NULL,
+              extra_quota INTEGER NOT NULL DEFAULT 0,
               PRIMARY KEY (api_key_id, month)
             );
             """
         )
+        _run_migrations(db)
 
         existing = db.execute("SELECT COUNT(1) AS c FROM plans;").fetchone()[0]
         if existing == 0:
@@ -176,11 +185,12 @@ def init_db() -> None:
             for plan in DEFAULT_PLANS:
                 db.execute(
                     """
-                    INSERT INTO plans (slug, name, monthly_quota, rpm_limit, price_irr, active, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?);
+                    INSERT INTO plans (slug, scope, name, monthly_quota, rpm_limit, price_irr, active, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
                     """,
                     (
                         plan["slug"],
+                        plan.get("scope", "all"),
                         plan["name"],
                         int(plan["monthly_quota"]),
                         int(plan["rpm_limit"]),
@@ -194,12 +204,20 @@ def init_db() -> None:
         db.close()
 
 
-def _get_or_create_customer(db: _sqlite3.Connection, email: str) -> int:
-    row = db.execute("SELECT id FROM customers WHERE email = ?;", (email,)).fetchone()
-    if row:
-        return int(row["id"])
+def _get_or_create_customer(db: _sqlite3.Connection, email: str, supabase_user_id: str | None = None) -> int:
+    if supabase_user_id:
+        row = db.execute("SELECT id FROM customers WHERE supabase_user_id = ?;", (supabase_user_id,)).fetchone()
+        if row:
+            return int(row["id"])
+    else:
+        row = db.execute("SELECT id FROM customers WHERE email = ? AND supabase_user_id IS NULL;", (email,)).fetchone()
+        if row:
+            return int(row["id"])
     now = _utcnow_iso()
-    cur = db.execute("INSERT INTO customers (email, created_at) VALUES (?, ?);", (email, now))
+    cur = db.execute(
+        "INSERT INTO customers (email, supabase_user_id, created_at) VALUES (?, ?, ?);",
+        (email, supabase_user_id, now),
+    )
     return int(cur.lastrowid)
 
 
@@ -224,7 +242,7 @@ def _auth_api_key(db: _sqlite3.Connection, api_key: str):
     row = db.execute(
         """
         SELECT api_keys.id AS api_key_id, api_keys.status, api_keys.customer_id, api_keys.plan_id,
-               plans.slug AS plan_slug, plans.name AS plan_name, plans.monthly_quota, plans.rpm_limit, plans.active AS plan_active
+               plans.slug AS plan_slug, plans.name AS plan_name, plans.scope, plans.monthly_quota, plans.rpm_limit, plans.active AS plan_active
         FROM api_keys
         JOIN plans ON plans.id = api_keys.plan_id
         WHERE api_keys.key_hash = ?;
@@ -243,8 +261,9 @@ def _increment_usage_or_reject(db: _sqlite3.Connection, *, api_key_id: int) -> d
     db.execute("BEGIN IMMEDIATE;")
     row = db.execute(
         """
-        SELECT plans.monthly_quota AS monthly_quota,
-               COALESCE(usage_monthly.request_count, 0) AS request_count
+        SELECT plans.monthly_quota AS base_quota,
+               COALESCE(usage_monthly.request_count, 0) AS request_count,
+               COALESCE(usage_monthly.extra_quota, 0) AS extra_quota
         FROM api_keys
         JOIN plans ON plans.id = api_keys.plan_id
         LEFT JOIN usage_monthly ON usage_monthly.api_key_id = api_keys.id AND usage_monthly.month = ?
@@ -256,7 +275,7 @@ def _increment_usage_or_reject(db: _sqlite3.Connection, *, api_key_id: int) -> d
         db.execute("ROLLBACK;")
         return {"ok": False, "error": "API key not active."}
 
-    monthly_quota = int(row["monthly_quota"])
+    monthly_quota = int(row["base_quota"]) + int(row["extra_quota"])
     request_count = int(row["request_count"])
     if request_count >= monthly_quota:
         db.execute("ROLLBACK;")
@@ -265,8 +284,8 @@ def _increment_usage_or_reject(db: _sqlite3.Connection, *, api_key_id: int) -> d
     new_count = request_count + 1
     db.execute(
         """
-        INSERT INTO usage_monthly (api_key_id, month, request_count)
-        VALUES (?, ?, ?)
+        INSERT INTO usage_monthly (api_key_id, month, request_count, extra_quota)
+        VALUES (?, ?, ?, 0)
         ON CONFLICT(api_key_id, month) DO UPDATE SET request_count = excluded.request_count;
         """,
         (api_key_id, month, new_count),
@@ -321,17 +340,48 @@ def _require_admin(view_func):
     return wrapped
 
 
+def _verify_supabase_jwt() -> dict | None:
+    """Verify Bearer JWT and return payload. Returns None if invalid."""
+    auth = request.headers.get("Authorization")
+    if not auth or not auth.startswith("Bearer "):
+        return None
+    token = auth[7:].strip()
+    secret = _os.environ.get("SUPABASE_JWT_SECRET")
+    if not secret:
+        return None
+    try:
+        payload = _jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
+        return payload
+    except Exception:
+        return None
+
+
+def require_supabase_jwt(view_func):
+    def wrapped(*args, **kwargs):
+        payload = _verify_supabase_jwt()
+        if not payload:
+            return jsonify({"error": "Invalid or missing authentication."}), 401
+        g.supabase_user = payload
+        g.supabase_user_id = payload.get("sub")
+        g.supabase_email = payload.get("email", "")
+        return view_func(*args, **kwargs)
+
+    wrapped.__name__ = getattr(view_func, "__name__", "wrapped_supabase")
+    return wrapped
+
+
 @bp.get("/plans")
 def list_plans():
     db = get_db()
     rows = db.execute(
-        "SELECT slug, name, monthly_quota, rpm_limit, price_irr, active FROM plans WHERE active = 1 ORDER BY id ASC;"
+        "SELECT slug, scope, name, monthly_quota, rpm_limit, price_irr, active FROM plans WHERE active = 1 ORDER BY scope, id;"
     ).fetchall()
     return jsonify(
         {
             "plans": [
                 {
                     "slug": r["slug"],
+                    "scope": r["scope"] if r["scope"] else "all",
                     "name": r["name"],
                     "monthly_quota": int(r["monthly_quota"]),
                     "rpm_limit": int(r["rpm_limit"]),
@@ -345,6 +395,7 @@ def list_plans():
 
 @bp.post("/purchase")
 def purchase_plan():
+    """Legacy: purchase with email (no auth). Kept for backward compat."""
     payload = request.get_json(silent=True) or {}
     email = (payload.get("email") or "").strip().lower()
     plan_slug = (payload.get("plan_slug") or "").strip()
@@ -355,20 +406,153 @@ def purchase_plan():
         return jsonify({"error": "plan_slug is required."}), 400
 
     db = get_db()
-    plan = db.execute("SELECT id, slug, name FROM plans WHERE slug = ? AND active = 1;", (plan_slug,)).fetchone()
+    plan = db.execute("SELECT id, slug, scope, name FROM plans WHERE slug = ? AND active = 1;", (plan_slug,)).fetchone()
     if not plan:
         return jsonify({"error": "Plan not found."}), 404
 
-    # NOTE: Payment integration (Stripe/Zarinpal/etc.) should happen before issuing a key.
-    customer_id = _get_or_create_customer(db, email)
+    customer_id = _get_or_create_customer(db, email, supabase_user_id=None)
     key = _create_api_key(db, customer_id=customer_id, plan_id=int(plan["id"]))
     db.commit()
     return jsonify(
         {
             "api_key": key["api_key"],
             "api_key_id": key["api_key_id"],
-            "plan": {"slug": plan["slug"], "name": plan["name"]},
+            "plan": {"slug": plan["slug"], "scope": plan["scope"] or "all", "name": plan["name"]},
             "created_at": key["created_at"],
+        }
+    )
+
+
+@bp.post("/me/purchase")
+@require_supabase_jwt
+def me_purchase():
+    """Purchase plan for logged-in user. Demo: no real payment."""
+    payload = request.get_json(silent=True) or {}
+    plan_slug = (payload.get("plan_slug") or "").strip()
+
+    if not plan_slug:
+        return jsonify({"error": "plan_slug is required."}), 400
+
+    db = get_db()
+    plan = db.execute("SELECT id, slug, scope, name FROM plans WHERE slug = ? AND active = 1;", (plan_slug,)).fetchone()
+    if not plan:
+        return jsonify({"error": "Plan not found."}), 404
+
+    user_id = g.supabase_user_id
+    email = g.supabase_email or f"{user_id}@user"
+    customer_id = _get_or_create_customer(db, email, supabase_user_id=user_id)
+    key = _create_api_key(db, customer_id=customer_id, plan_id=int(plan["id"]))
+    db.commit()
+    return jsonify(
+        {
+            "api_key": key["api_key"],
+            "api_key_id": key["api_key_id"],
+            "plan": {"slug": plan["slug"], "scope": plan["scope"] or "all", "name": plan["name"]},
+            "created_at": key["created_at"],
+        }
+    )
+
+
+@bp.get("/me/keys")
+@require_supabase_jwt
+def me_list_keys():
+    """List API keys and usage for the logged-in user."""
+    db = get_db()
+    user_id = g.supabase_user_id
+    month = _month_key()
+
+    row = db.execute("SELECT id FROM customers WHERE supabase_user_id = ?;", (user_id,)).fetchone()
+    if not row:
+        return jsonify({"keys": []})
+
+    customer_id = int(row["id"])
+    rows = db.execute(
+        """
+        SELECT api_keys.id AS api_key_id, api_keys.key_prefix, api_keys.key_last4, api_keys.status, api_keys.created_at,
+               plans.slug AS plan_slug, plans.scope, plans.name AS plan_name, plans.monthly_quota,
+               COALESCE(usage_monthly.request_count, 0) AS request_count,
+               COALESCE(usage_monthly.extra_quota, 0) AS extra_quota
+        FROM api_keys
+        JOIN plans ON plans.id = api_keys.plan_id
+        LEFT JOIN usage_monthly ON usage_monthly.api_key_id = api_keys.id AND usage_monthly.month = ?
+        WHERE api_keys.customer_id = ? AND api_keys.status = 'active';
+        """,
+        (month, customer_id),
+    ).fetchall()
+
+    keys = []
+    for r in rows:
+        base = int(r["monthly_quota"])
+        extra = int(r["extra_quota"])
+        used = int(r["request_count"])
+        total = base + extra
+        remaining = max(0, total - used)
+        keys.append(
+            {
+                "api_key_id": int(r["api_key_id"]),
+                "masked": f"{r['key_prefix']}_…{r['key_last4']}",
+                "status": r["status"],
+                "created_at": r["created_at"],
+                "plan": {"slug": r["plan_slug"], "scope": r["scope"] or "all", "name": r["plan_name"]},
+                "usage": {
+                    "month": month,
+                    "request_count": used,
+                    "monthly_quota": total,
+                    "remaining": remaining,
+                },
+            }
+        )
+    return jsonify({"keys": keys})
+
+
+@bp.post("/me/keys/<int:api_key_id>/add-requests")
+@require_supabase_jwt
+def me_add_requests(api_key_id: int):
+    """Add extra requests (demo payment)."""
+    db = get_db()
+    user_id = g.supabase_user_id
+    month = _month_key()
+
+    row = db.execute(
+        """
+        SELECT api_keys.id FROM api_keys
+        JOIN customers ON customers.id = api_keys.customer_id
+        WHERE api_keys.id = ? AND customers.supabase_user_id = ? AND api_keys.status = 'active';
+        """,
+        (api_key_id, user_id),
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "API key not found or not yours."}), 404
+
+    db.execute("BEGIN IMMEDIATE;")
+    db.execute(
+        """
+        INSERT INTO usage_monthly (api_key_id, month, request_count, extra_quota)
+        VALUES (?, ?, 0, ?)
+        ON CONFLICT(api_key_id, month) DO UPDATE SET extra_quota = extra_quota + ?;
+        """,
+        (api_key_id, month, ADDON_EXTRA_REQUESTS, ADDON_EXTRA_REQUESTS),
+    )
+    db.commit()
+
+    row = db.execute(
+        """
+        SELECT COALESCE(request_count, 0) AS request_count, COALESCE(extra_quota, 0) AS extra_quota,
+               plans.monthly_quota AS base_quota
+        FROM api_keys
+        JOIN plans ON plans.id = api_keys.plan_id
+        LEFT JOIN usage_monthly ON usage_monthly.api_key_id = api_keys.id AND usage_monthly.month = ?
+        WHERE api_keys.id = ?;
+        """,
+        (month, api_key_id),
+    ).fetchone()
+    used = int(row["request_count"])
+    total = int(row["base_quota"]) + int(row["extra_quota"])
+    return jsonify(
+        {
+            "ok": True,
+            "added": ADDON_EXTRA_REQUESTS,
+            "usage": {"month": month, "request_count": used, "monthly_quota": total, "remaining": max(0, total - used)},
         }
     )
 
@@ -382,9 +566,9 @@ def self_usage():
     row = db.execute(
         """
         SELECT COALESCE(usage_monthly.request_count, 0) AS request_count,
-               plans.monthly_quota AS monthly_quota,
-               plans.slug AS plan_slug,
-               plans.name AS plan_name
+               plans.monthly_quota AS base_quota,
+               COALESCE(usage_monthly.extra_quota, 0) AS extra_quota,
+               plans.slug AS plan_slug, plans.scope, plans.name AS plan_name
         FROM api_keys
         JOIN plans ON plans.id = api_keys.plan_id
         LEFT JOIN usage_monthly ON usage_monthly.api_key_id = api_keys.id AND usage_monthly.month = ?
@@ -392,12 +576,15 @@ def self_usage():
         """,
         (month, api_key_id),
     ).fetchone()
+    total = int(row["base_quota"]) + int(row["extra_quota"])
+    used = int(row["request_count"])
     return jsonify(
         {
             "month": month,
-            "request_count": int(row["request_count"]),
-            "monthly_quota": int(row["monthly_quota"]),
-            "plan": {"slug": row["plan_slug"], "name": row["plan_name"]},
+            "request_count": used,
+            "monthly_quota": total,
+            "remaining": max(0, total - used),
+            "plan": {"slug": row["plan_slug"], "scope": row["scope"] or "all", "name": row["plan_name"]},
         }
     )
 
