@@ -402,12 +402,12 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background-color: #f7f7f5;
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-family: var(--font-sans);
-    direction: ltr;
+    direction: inherit;
   }
 
   h1 {

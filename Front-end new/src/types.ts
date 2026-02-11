@@ -46,7 +46,8 @@ export interface ApiResponse {
 
 export interface CurrencyItem {
   key: keyof CurrencyData;
-  name: string;
+  nameEn: string;
+  nameFa: string;
   symbol: string;
   flag?: string;
   category: 'currency' | 'gold' | 'coin' | 'crypto';

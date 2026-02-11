@@ -9,13 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
-import { Key, Plus, Copy, Check, Loader2 } from 'lucide-react';
+import { AddCircle, Copy, CopySuccess, KeySquare, Link2 } from 'iconsax-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
-const SCOPE_LABELS: Record<string, string> = {
-  all: 'All APIs',
-  currency: 'Currency API',
-  crypto: 'Crypto API',
-  gold: 'Gold API',
+const SCOPE_LABELS: Record<string, { en: string; fa: string }> = {
+  all: { en: 'All APIs', fa: 'API همه' },
+  currency: { en: 'Currency API', fa: 'API ارز' },
+  crypto: { en: 'Crypto API', fa: 'API ارز دیجیتال' },
+  gold: { en: 'Gold API', fa: 'API طلا' },
 };
 
 type ApiKeyItem = {
@@ -110,6 +111,8 @@ async function apiFetch(
 
 export default function Dashboard() {
   const { user, session, signOut } = useAuth();
+  const { language } = useLanguage();
+  const isFa = language === 'fa';
   const [keys, setKeys] = useState<ApiKeyItem[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,12 +214,14 @@ export default function Dashboard() {
           setError(
             demoError instanceof Error
               ? demoError.message
-              : 'Something went wrong.'
+              : isFa
+                ? 'خطایی رخ داد.'
+                : 'Something went wrong.'
           );
           return;
         }
       }
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      setError(e instanceof Error ? e.message : isFa ? 'خطایی رخ داد.' : 'Something went wrong.');
     } finally {
       setPurchasing(false);
       setPurchasingPlan(null);
@@ -262,7 +267,7 @@ export default function Dashboard() {
         setAddRequestsKeyId(null);
         return;
       }
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      setError(e instanceof Error ? e.message : isFa ? 'خطایی رخ داد.' : 'Something went wrong.');
     } finally {
       setAddRequestsKeyId(null);
     }
@@ -270,31 +275,46 @@ export default function Dashboard() {
 
   const handleCopy = async (value: string, token: string) => {
     if (!value) return;
+    const successMessage = isFa ? 'کپی شد' : 'Copied';
     try {
-      await navigator.clipboard.writeText(value);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = value;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (!ok) throw new Error('copy failed');
+      }
       setCopiedToken(token);
       setTimeout(() => setCopiedToken(null), 2000);
     } catch {
-      setError('Copy failed. Please try again.');
+      setError(isFa ? 'کپی انجام نشد. دوباره تلاش کنید.' : 'Copy failed. Please try again.');
+      setCopiedToken(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#f7f7f5]">
       <Header />
       <div className="mx-auto w-full max-w-6xl px-6 py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <h1 className="text-2xl font-semibold">{isFa ? 'داشبورد' : 'Dashboard'}</h1>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
             {demoMode && (
               <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                Demo mode (auth unavailable)
+                {isFa ? 'حالت دمو (احراز هویت غیرفعال)' : 'Demo mode (auth unavailable)'}
               </span>
             )}
           </div>
           <Button variant="outline" onClick={signOut}>
-            Sign out
+            {isFa ? 'خروج' : 'Sign out'}
           </Button>
         </div>
 
@@ -308,17 +328,19 @@ export default function Dashboard() {
           {/* API Keys */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">My API Keys</h2>
+              <h2 className="text-lg font-semibold">{isFa ? 'کلیدهای API من' : 'My API Keys'}</h2>
             </div>
             {loading ? (
               <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Loading...
+                <div className="h-5 w-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                {isFa ? 'در حال بارگذاری...' : 'Loading...'}
               </div>
             ) : keys.length === 0 ? (
               <Card className="shadow-sm">
                 <CardContent className="py-10 text-center text-muted-foreground">
-                  You do not have any API keys yet. Buy a plan to get started.
+                  {isFa
+                    ? 'هنوز هیچ کلید API ندارید. یک پلن بخرید تا شروع کنید.'
+                    : 'You do not have any API keys yet. Buy a plan to get started.'}
                 </CardContent>
               </Card>
             ) : (
@@ -330,9 +352,11 @@ export default function Dashboard() {
                     <CardHeader className="flex flex-row items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <Key className="w-5 h-5 text-primary" />
+                          <span className="text-primary">
+                            <KeySquare size={18} variant="Bold" color="currentColor" />
+                          </span>
                           <CardTitle className="text-base">
-                            {SCOPE_LABELS[k.plan.scope] || k.plan.name}
+                            {(SCOPE_LABELS[k.plan.scope]?.[isFa ? 'fa' : 'en']) || k.plan.name}
                           </CardTitle>
                         </div>
                         <p className="text-xs text-muted-foreground font-mono">
@@ -344,18 +368,27 @@ export default function Dashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleCopy(apiUrl, `url-${k.api_key_id}`)}
+                          className="gap-1"
+                          type="button"
                         >
-                          {copiedToken === `url-${k.api_key_id}` ? 'Copied URL' : 'Copy URL'}
+                          <Link2 size={14} variant="Bold" color="currentColor" />
+                          {copiedToken === `url-${k.api_key_id}`
+                            ? isFa
+                              ? 'کپی شد'
+                              : 'Copied URL'
+                            : isFa
+                              ? 'کپی آدرس'
+                              : 'Copy URL'}
                         </Button>
                       )}
                     </CardHeader>
                     <CardContent className="space-y-5">
                       <div className="space-y-2">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                          API Key
+                          {isFa ? 'کلید API' : 'API Key'}
                         </p>
                         <div className="flex items-center gap-2">
-                          <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono">
+                          <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono" dir="ltr">
                             {k.api_key ?? k.masked}
                           </code>
                           <Button
@@ -363,8 +396,17 @@ export default function Dashboard() {
                             size="sm"
                             onClick={() => handleCopy(k.api_key ?? '', `key-${k.api_key_id}`)}
                             disabled={!k.api_key}
+                            className="gap-1"
+                            type="button"
                           >
-                            {copiedToken === `key-${k.api_key_id}` ? 'Copied' : 'Copy'}
+                            <Copy size={14} variant="Bold" color="currentColor" />
+                            {copiedToken === `key-${k.api_key_id}`
+                              ? isFa
+                                ? 'کپی شد'
+                                : 'Copied'
+                              : isFa
+                                ? 'کپی'
+                                : 'Copy'}
                           </Button>
                         </div>
                       </div>
@@ -372,9 +414,9 @@ export default function Dashboard() {
                       {apiUrl && (
                         <div className="space-y-2">
                           <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                            API URL
+                            {isFa ? 'آدرس API' : 'API URL'}
                           </p>
-                          <code className="block rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono">
+                          <code className="block rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono" dir="ltr">
                             {apiUrl}
                           </code>
                         </div>
@@ -382,7 +424,7 @@ export default function Dashboard() {
 
                       <div>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Monthly usage ({k.usage.month})
+                          {isFa ? 'مصرف ماهانه' : 'Monthly usage'} ({k.usage.month})
                         </p>
                         <div className="flex items-center gap-3">
                           <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
@@ -397,12 +439,13 @@ export default function Dashboard() {
                             />
                           </div>
                           <span className="text-sm font-medium tabular-nums">
-                            {k.usage.request_count.toLocaleString('en-US')} /{' '}
-                            {k.usage.monthly_quota.toLocaleString('en-US')}
+                            {k.usage.request_count.toLocaleString(isFa ? 'fa-IR' : 'en-US')} /{' '}
+                            {k.usage.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          {k.usage.remaining.toLocaleString('en-US')} requests remaining
+                          {k.usage.remaining.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
+                          {isFa ? 'درخواست باقی‌مانده' : 'requests remaining'}
                         </p>
                       </div>
                       <Button
@@ -413,11 +456,13 @@ export default function Dashboard() {
                         disabled={addRequestsKeyId === k.api_key_id}
                       >
                         {addRequestsKeyId === k.api_key_id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <Plus className="w-4 h-4" />
+                          <AddCircle size={16} variant="Bold" color="currentColor" />
                         )}
-                        <span className="ml-1">Buy 5,000 requests (demo)</span>
+                        <span className="ml-1">
+                          {isFa ? 'خرید ۵۰۰۰ درخواست (دمو)' : 'Buy 5,000 requests (demo)'}
+                        </span>
                       </Button>
                     </CardContent>
                   </Card>
@@ -430,7 +475,7 @@ export default function Dashboard() {
           {/* Purchase new plan */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Buy a New API Key</h2>
+              <h2 className="text-lg font-semibold">{isFa ? 'خرید کلید API جدید' : 'Buy a New API Key'}</h2>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {plans.map((plan) => (
@@ -440,13 +485,15 @@ export default function Dashboard() {
                 >
                   <CardHeader className="space-y-2">
                     <CardTitle className="text-base">
-                      {SCOPE_LABELS[plan.scope] || plan.name}
+                      {(SCOPE_LABELS[plan.scope]?.[isFa ? 'fa' : 'en']) || plan.name}
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      {plan.monthly_quota.toLocaleString('en-US')} requests/month
+                      {plan.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
+                      {isFa ? 'درخواست/ماه' : 'requests/month'}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {plan.rpm_limit.toLocaleString('en-US')} rpm limit
+                      {plan.rpm_limit.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
+                      {isFa ? 'درخواست در دقیقه' : 'rpm limit'}
                     </p>
                   </CardHeader>
                   <CardContent>
@@ -462,10 +509,16 @@ export default function Dashboard() {
                       disabled={purchasing && purchasingPlan === plan.slug}
                     >
                       {purchasing && purchasingPlan === plan.slug ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : null}
                       <span>
-                        {purchasing && purchasingPlan === plan.slug ? 'Processing...' : 'Buy (demo)'}
+                        {purchasing && purchasingPlan === plan.slug
+                          ? isFa
+                            ? 'در حال پردازش...'
+                            : 'Processing...'
+                          : isFa
+                            ? 'خرید (دمو)'
+                            : 'Buy (demo)'}
                       </span>
                     </Button>
                   </CardContent>
@@ -488,42 +541,46 @@ export default function Dashboard() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Your API Key</DialogTitle>
+              <DialogTitle>{isFa ? 'کلید API شما' : 'Your API Key'}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              This key is shown only once. Copy it now.
+              {isFa
+                ? 'این کلید فقط یک‌بار نمایش داده می‌شود. همین حالا کپی کنید.'
+                : 'This key is shown only once. Copy it now.'}
             </p>
             <div className="space-y-4">
               <div className="flex gap-2">
-                <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono">
+                <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono" dir="ltr">
                   {newApiKey}
                 </code>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => handleCopy(newApiKey ?? '', 'dialog-key')}
+                  type="button"
                 >
                   {copiedToken === 'dialog-key' ? (
-                    <Check className="w-4 h-4" />
+                    <CopySuccess size={16} variant="Bold" color="currentColor" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <Copy size={16} variant="Bold" color="currentColor" />
                   )}
                 </Button>
               </div>
               {newApiUrl && (
                 <div className="flex gap-2">
-                  <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono">
+                  <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono" dir="ltr">
                     {newApiUrl}
                   </code>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => handleCopy(newApiUrl, 'dialog-url')}
+                    type="button"
                   >
                     {copiedToken === 'dialog-url' ? (
-                      <Check className="w-4 h-4" />
+                      <CopySuccess size={16} variant="Bold" color="currentColor" />
                     ) : (
-                      <Copy className="w-4 h-4" />
+                      <Copy size={16} variant="Bold" color="currentColor" />
                     )}
                   </Button>
                 </div>
@@ -535,7 +592,7 @@ export default function Dashboard() {
                 setNewApiUrl(null);
               }}
             >
-              Got it
+              {isFa ? 'متوجه شدم' : 'Got it'}
             </Button>
           </DialogContent>
         </Dialog>

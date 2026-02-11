@@ -49,6 +49,12 @@ docker-compose up -d --build
 برای اندپوینت ادمین:
 - `ADMIN_TOKEN` را ست کنید و سپس `GET /api/admin/keys` را با هدر `x-admin-token` صدا بزنید.
 
-## فونت Inter
+## فونت‌ها
 
-فرانت از فونت `Inter` (Google Fonts) استفاده می‌کند.
+فرانت از فونت `Aeonik Pro` برای انگلیسی و `IRANYekanX` برای فارسی استفاده می‌کند.
+فایل‌ها را در مسیرهای زیر قرار دهید:
+- `frontend/public/fonts/AeonikPro-Regular.woff2`
+- `frontend/public/fonts/AeonikPro-Medium.woff2`
+- `frontend/public/fonts/AeonikPro-Bold.woff2`
+- `frontend/public/fonts/IranYekanX-Regular.woff2`
+- `frontend/public/fonts/IranYekanX-Bold.woff2`

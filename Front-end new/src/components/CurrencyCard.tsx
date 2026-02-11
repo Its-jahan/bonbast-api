@@ -1,5 +1,6 @@
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendDown, TrendUp } from 'iconsax-react';
 import { CurrencyItem } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CurrencyCardProps {
   currency: CurrencyItem;
@@ -8,6 +9,8 @@ interface CurrencyCardProps {
 }
 
 export function CurrencyCard({ currency, price, previousPrice }: CurrencyCardProps) {
+  const { language } = useLanguage();
+  const isFa = language === 'fa';
   const numericPrice = parseFloat(price.replace(/,/g, ''));
   const numericPreviousPrice = previousPrice ? parseFloat(previousPrice.replace(/,/g, '')) : null;
   
@@ -21,21 +24,21 @@ export function CurrencyCard({ currency, price, previousPrice }: CurrencyCardPro
 
   const formatPrice = (value: string) => {
     const num = parseFloat(value.replace(/,/g, ''));
-    return num.toLocaleString('fa-IR');
+    return num.toLocaleString(isFa ? 'fa-IR' : 'en-US');
   };
 
   const getCategoryColor = () => {
     switch (currency.category) {
       case 'currency':
-        return 'border-blue-200 bg-blue-50/50';
+        return 'border-blue-200';
       case 'gold':
-        return 'border-yellow-200 bg-yellow-50/50';
+        return 'border-yellow-200';
       case 'coin':
-        return 'border-orange-200 bg-orange-50/50';
+        return 'border-orange-200';
       case 'crypto':
-        return 'border-purple-200 bg-purple-50/50';
+        return 'border-purple-200';
       default:
-        return 'border-gray-200 bg-gray-50/50';
+        return 'border-gray-200';
     }
   };
 
@@ -54,42 +57,54 @@ export function CurrencyCard({ currency, price, previousPrice }: CurrencyCardPro
     }
   };
 
+  const categoryLabel = (() => {
+    if (currency.category === 'currency') return isFa ? 'ارز' : 'Currency';
+    if (currency.category === 'gold') return isFa ? 'طلا' : 'Gold';
+    if (currency.category === 'coin') return isFa ? 'سکه' : 'Coin';
+    return isFa ? 'ارز دیجیتال' : 'Crypto';
+  })();
+
+  const unitLabel = isFa ? 'تومان' : 'Toman';
+
   return (
-    <div className={`rounded-xl border-2 p-5 hover:shadow-lg transition-all ${getCategoryColor()}`}>
+    <div className={`rounded-2xl border border-[#e5e5e5] bg-white p-5 shadow-sm transition-all hover:shadow-md ${getCategoryColor()}`}>
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {currency.flag && <span className="text-2xl">{currency.flag}</span>}
           <div>
-            <h3 className="font-bold text-lg">{currency.name}</h3>
-            <span className="text-sm text-muted-foreground">{currency.symbol}</span>
+            <h3 className="font-semibold text-base">{isFa ? currency.nameFa : currency.nameEn}</h3>
+            <span className="text-xs text-muted-foreground" dir="ltr">
+              {currency.symbol}
+            </span>
           </div>
         </div>
         {priceChange !== null && (
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-semibold ${
-            isIncreasing ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-          }`}>
+          <div
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+              isIncreasing ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+            }`}
+          >
             {isIncreasing ? (
-              <TrendingUp className="w-4 h-4" />
+              <TrendUp size={14} variant="Bold" color="currentColor" />
             ) : (
-              <TrendingDown className="w-4 h-4" />
+              <TrendDown size={14} variant="Bold" color="currentColor" />
             )}
             <span>{Math.abs(priceChange).toFixed(2)}%</span>
           </div>
         )}
       </div>
 
-      <div className="mb-2">
-        <div className="text-2xl font-bold text-primary">
+      <div className="mb-3">
+        <div className="text-xl font-semibold text-gray-900">
           {formatPrice(price)}
-          <span className="text-sm text-muted-foreground mr-2">تومان</span>
+          <span className={`text-xs text-muted-foreground ${isFa ? 'mr-2' : 'ml-2'}`}>
+            {unitLabel}
+          </span>
         </div>
       </div>
 
-      <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getCategoryBadgeColor()}`}>
-        {currency.category === 'currency' && 'ارز'}
-        {currency.category === 'gold' && 'طلا'}
-        {currency.category === 'coin' && 'سکه'}
-        {currency.category === 'crypto' && 'ارز دیجیتال'}
+      <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getCategoryBadgeColor()}`}>
+        {categoryLabel}
       </div>
     </div>
   );
