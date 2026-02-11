@@ -1,29 +1,34 @@
 import { createBrowserRouter } from 'react-router';
-import Root from './pages/Root';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
+import Signup from './pages/Signup';
 import Shop from './pages/Shop';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import Checkout from './pages/Checkout';
+import Dashboard from './pages/Dashboard';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    Component: Root,
-    children: [
-      { index: true, Component: Home },
-      { path: 'login', Component: Login },
-      { path: 'register', Component: Register },
-      { path: 'shop', Component: Shop },
-      {
-        path: 'dashboard',
-        element: (
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        ),
-      },
-    ],
+    Component: Home,
+  },
+  {
+    path: '/login',
+    Component: Login,
+  },
+  {
+    path: '/signup',
+    Component: Signup,
+  },
+  {
+    path: '/shop',
+    Component: Shop,
+  },
+  {
+    path: '/checkout',
+    Component: Checkout,
+  },
+  {
+    path: '/dashboard',
+    Component: Dashboard,
   },
 ]);

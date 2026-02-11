@@ -1,47 +1,51 @@
 // API Configuration
+// Change this to your backend URL
 export const API_CONFIG = {
-  // Backend API base URL - served via nginx proxy
-  BASE_URL: '/api',
-  
+  BASE_URL: '/api',  // Proxied through Vite/Nginx
   ENDPOINTS: {
-    // Price endpoints
     PRICES: '/prices',
-    V1_PRICES: '/v1/prices',
-    
-    // API Manager endpoints
-    PLANS: '/plans',
-    PURCHASE: '/me/purchase',
-    MY_KEYS: '/me/keys',
-    ADD_REQUESTS: '/me/keys',
-    SELF_USAGE: '/self/usage',
+    CURRENCIES: '/currencies',
+    GOLD: '/gold',
+    COINS: '/coins',
+    CRYPTO: '/crypto',
   },
-  
-  // Auto-refresh interval (30 seconds)
+  // Auto-refresh interval in milliseconds (30 seconds)
   REFRESH_INTERVAL: 30000,
 };
 
-// Helper function to build full API URL
-export function buildApiUrl(endpoint: string): string {
-  return `${API_CONFIG.BASE_URL}${endpoint}`;
-}
-
-// Helper function to make authenticated API calls
-export async function apiCall(
-  endpoint: string,
-  options: RequestInit = {},
-  accessToken?: string
-): Promise<Response> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  return fetch(buildApiUrl(endpoint), {
-    ...options,
-    headers,
-  });
-}
+// API Helper functions
+export const apiClient = {
+  get: async (endpoint: string, headers?: HeadersInit) => {
+    const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        ...headers,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+  
+  post: async (endpoint: string, data?: any, headers?: HeadersInit) => {
+    const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...headers,
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+};

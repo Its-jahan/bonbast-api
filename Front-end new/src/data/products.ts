@@ -1,0 +1,78 @@
+import { Product } from '../types';
+
+export const products: Product[] = [
+  {
+    id: 'basic',
+    name: 'پلن پایه',
+    description: 'برای شروع و تست',
+    price: 99000,
+    monthlyRequests: 1000,
+    apiType: 'currencies',
+    features: [
+      'دسترسی به API ارزها',
+      '1,000 درخواست در ماه',
+      'پشتیبانی ایمیلی',
+      'مستندات کامل',
+    ],
+  },
+  {
+    id: 'pro',
+    name: 'پلن حرفه‌ای',
+    description: 'برای کسب‌وکارهای کوچک',
+    price: 299000,
+    monthlyRequests: 10000,
+    apiType: 'all',
+    features: [
+      'دسترسی به تمام APIها',
+      '10,000 درخواست در ماه',
+      'پشتیبانی اولویت‌دار',
+      'مستندات کامل',
+      'داشبورد تحلیلی',
+    ],
+    popular: true,
+  },
+  {
+    id: 'enterprise',
+    name: 'پلن سازمانی',
+    description: 'برای کسب‌وکارهای بزرگ',
+    price: 999000,
+    monthlyRequests: 100000,
+    apiType: 'all',
+    features: [
+      'دسترسی به تمام APIها',
+      '100,000 درخواست در ماه',
+      'پشتیبانی 24/7',
+      'مستندات کامل',
+      'داشبورد تحلیلی پیشرفته',
+      'SLA تضمین شده',
+    ],
+  },
+  {
+    id: 'gold',
+    name: 'API طلا و سکه',
+    description: 'فقط قیمت طلا و سکه',
+    price: 149000,
+    monthlyRequests: 5000,
+    apiType: 'gold',
+    features: [
+      'دسترسی به API طلا و سکه',
+      '5,000 درخواست در ماه',
+      'پشتیبانی ایمیلی',
+      'مستندات کامل',
+    ],
+  },
+  {
+    id: 'crypto',
+    name: 'API ارز دیجیتال',
+    description: 'فقط ارزهای دیجیتال',
+    price: 199000,
+    monthlyRequests: 5000,
+    apiType: 'crypto',
+    features: [
+      'دسترسی به API ارز دیجیتال',
+      '5,000 درخواست در ماه',
+      'پشتیبانی ایمیلی',
+      'مستندات کامل',
+    ],
+  },
+];

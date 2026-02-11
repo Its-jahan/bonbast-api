@@ -1,114 +1,80 @@
-import { TrendDown, TrendUp } from 'iconsax-react';
-import { CurrencyItem } from '../types';
-import { useLanguage } from '../contexts/LanguageContext';
+import { Currency } from '../types';
+import { ArrowUp, ArrowDown } from 'iconsax-react';
 
 interface CurrencyCardProps {
-  currency: CurrencyItem;
+  currency: Currency;
   price: string;
   previousPrice?: string;
 }
 
 export function CurrencyCard({ currency, price, previousPrice }: CurrencyCardProps) {
-  const { language } = useLanguage();
-  const isFa = language === 'fa';
-  const numericPrice = parseFloat(price.replace(/,/g, ''));
-  const numericPreviousPrice = previousPrice ? parseFloat(previousPrice.replace(/,/g, '')) : null;
-  
-  let priceChange: number | null = null;
-  let isIncreasing = false;
-  
-  if (numericPreviousPrice && numericPreviousPrice !== numericPrice) {
-    priceChange = ((numericPrice - numericPreviousPrice) / numericPreviousPrice) * 100;
-    isIncreasing = priceChange > 0;
-  }
+  const currentPrice = parseFloat(price?.replace(/,/g, '') || '0');
+  const prevPrice = parseFloat(previousPrice?.replace(/,/g, '') || '0');
+  const change = prevPrice ? ((currentPrice - prevPrice) / prevPrice) * 100 : 0;
+  const isUp = change > 0;
+  const isDown = change < 0;
 
-  const formatPrice = (value: string) => {
-    const num = parseFloat(value.replace(/,/g, ''));
-    return num.toLocaleString(isFa ? 'fa-IR' : 'en-US');
-  };
-
-  const getCategoryColor = () => {
-    switch (currency.category) {
+  const getCategoryColor = (category: string) => {
+    switch (category) {
       case 'currency':
-        return 'border-blue-200';
+        return 'from-notion-blue/20 to-notion-blue/5 border-notion-blue/30';
       case 'gold':
-        return 'border-yellow-200';
+        return 'from-notion-yellow/20 to-notion-yellow/5 border-notion-yellow/30';
       case 'coin':
-        return 'border-orange-200';
+        return 'from-notion-orange/20 to-notion-orange/5 border-notion-orange/30';
       case 'crypto':
-        return 'border-purple-200';
+        return 'from-notion-purple/20 to-notion-purple/5 border-notion-purple/30';
       default:
-        return 'border-gray-200';
+        return 'from-card to-card border-border';
     }
   };
-
-  const getCategoryBadgeColor = () => {
-    switch (currency.category) {
-      case 'currency':
-        return 'bg-blue-100 text-blue-700';
-      case 'gold':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'coin':
-        return 'bg-orange-100 text-orange-700';
-      case 'crypto':
-        return 'bg-purple-100 text-purple-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const categoryLabel = (() => {
-    if (currency.category === 'currency') return isFa ? 'ارز' : 'Currency';
-    if (currency.category === 'gold') return isFa ? 'طلا' : 'Gold';
-    if (currency.category === 'coin') return isFa ? 'سکه' : 'Coin';
-    return isFa ? 'ارز دیجیتال' : 'Crypto';
-  })();
-
-  const unitLabel = isFa ? 'تومان' : 'Toman';
 
   return (
-    <div className="rounded-3xl bg-[#1a1a1a] p-8 border border-[#2a2a2a] hover:border-[#3a3a3a] transition-all group">
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4">
-          {currency.flag && <span className="text-4xl">{currency.flag}</span>}
+    <div
+      className={`group relative bg-gradient-to-br ${getCategoryColor(
+        currency.category
+      )} border rounded-xl p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
+    >
+      {/* Icon & Name */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="text-3xl">{currency.icon}</div>
           <div>
-            <h3 className="font-semibold text-lg text-white mb-1">{isFa ? currency.nameFa : currency.nameEn}</h3>
-            <span className="text-sm text-gray-400" dir="ltr">
-              {currency.symbol}
-            </span>
+            <h3 className="font-bold text-foreground">{currency.name}</h3>
+            <p className="text-xs text-muted-foreground">{currency.symbol}</p>
           </div>
         </div>
-        {priceChange !== null && (
+
+        {/* Change Indicator */}
+        {change !== 0 && (
           <div
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold ${
-              isIncreasing ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${
+              isUp
+                ? 'bg-success/20 text-success'
+                : isDown
+                ? 'bg-destructive/20 text-destructive'
+                : 'bg-muted text-muted-foreground'
             }`}
           >
-            {isIncreasing ? (
-              <TrendUp size={16} variant="Bold" color="currentColor" />
-            ) : (
-              <TrendDown size={16} variant="Bold" color="currentColor" />
-            )}
-            <span>{Math.abs(priceChange).toFixed(1)}%</span>
+            {isUp && <ArrowUp size={14} />}
+            {isDown && <ArrowDown size={14} />}
+            <span>{Math.abs(change).toFixed(2)}%</span>
           </div>
         )}
       </div>
 
-      <div className="mb-6">
-        <div className="text-3xl font-bold text-white mb-2">
-          {formatPrice(price)}
+      {/* Price */}
+      <div className="mt-4 pt-4 border-t border-border/50">
+        <div className="text-2xl font-bold text-foreground">
+          {currentPrice.toLocaleString('fa-IR')}
+          <span className="text-sm text-muted-foreground mr-2">
+            {currency.category === 'crypto' ? 'دلار' : 'تومان'}
+          </span>
         </div>
-        <span className="text-sm text-gray-400">
-          {unitLabel}
-        </span>
       </div>
 
-      <div className="h-2 w-full bg-[#0a0a0a] rounded-full overflow-hidden">
-        <div 
-          className={`h-full transition-all ${isIncreasing ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-blue-500 to-blue-400'}`} 
-          style={{ width: '65%' }}
-        ></div>
-      </div>
+      {/* Hover Effect Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-primary/10 rounded-xl transition-all duration-300 pointer-events-none"></div>
     </div>
   );
 }

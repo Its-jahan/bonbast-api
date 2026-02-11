@@ -1,26 +1,21 @@
-import type { ComponentType } from 'react';
-import type { IconProps } from 'iconsax-react';
-
 interface StatCardProps {
-  icon: ComponentType<IconProps>;
+  icon: any;
   label: string;
   value: string;
-  unit?: string;
   color: string;
 }
 
-export function StatCard({ icon: Icon, label, value, unit, color }: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
   return (
-    <div className={`bg-gradient-to-br ${color} rounded-3xl p-8 shadow-2xl shadow-black/20 border border-white/10`}>
-      <div className="flex items-start justify-between mb-6">
-        <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-          <Icon size={28} variant="Bold" color="#ffffff" />
+    <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg hover:border-primary/50 transition-all duration-300 group">
+      <div className="flex items-center gap-4">
+        <div className={`p-3 rounded-xl ${color} group-hover:scale-110 transition-transform`}>
+          <Icon size={24} variant="Bold" />
         </div>
-      </div>
-      <div>
-        <p className="text-sm text-white/80 mb-2 font-medium">{label}</p>
-        <p className="text-3xl font-bold text-white mb-1">{value}</p>
-        {unit && <p className="text-sm text-white/60">{unit}</p>}
+        <div className="flex-1">
+          <p className="text-sm text-muted-foreground mb-1">{label}</p>
+          <p className="text-xl font-bold text-foreground">{value}</p>
+        </div>
       </div>
     </div>
   );
