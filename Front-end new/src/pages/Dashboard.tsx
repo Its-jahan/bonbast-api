@@ -30,6 +30,7 @@ type ApiKeyItem = {
     monthly_quota: number;
     remaining: number;
   };
+  is_demo?: boolean;
 };
 
 type Plan = {
@@ -40,6 +41,36 @@ type Plan = {
   rpm_limit: number;
   price_irr: number;
 };
+
+type ApiError = Error & { status?: number };
+
+const DEMO_STORAGE_KEY = 'demo_api_keys';
+const DEMO_REQUESTS_ADDON = 5000;
+
+const buildMaskedKey = (apiKey: string) => {
+  const prefix = apiKey.split('_', 1)[0];
+  const last4 = apiKey.slice(-4);
+  return `${prefix}_…${last4}`;
+};
+
+const getMonthKey = () => new Date().toISOString().slice(0, 7);
+
+const loadDemoKeys = (): ApiKeyItem[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(DEMO_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as ApiKeyItem[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveDemoKeys = (items: ApiKeyItem[]) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(items));
+};
+
+const isAuthError = (error: unknown) => (error as ApiError)?.status === 401;
 
 async function apiFetch(
   path: string,
@@ -56,7 +87,9 @@ async function apiFetch(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || res.statusText);
+    const apiError = new Error(err.error || res.statusText) as ApiError;
+    apiError.status = res.status;
+    throw apiError;
   }
   return res.json();
 }
@@ -72,15 +105,25 @@ export default function Dashboard() {
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [addRequestsKeyId, setAddRequestsKeyId] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
   const token = session?.access_token;
 
   const fetchKeys = async () => {
+    if (demoMode) {
+      setKeys(loadDemoKeys());
+      return;
+    }
     if (!token) return;
     try {
       const data = await apiFetch('/me/keys', { token });
       setKeys(data.keys);
-    } catch {
+    } catch (e) {
+      if (isAuthError(e)) {
+        setDemoMode(true);
+        setKeys(loadDemoKeys());
+        return;
+      }
       setKeys([]);
     }
   };
@@ -103,7 +146,7 @@ export default function Dashboard() {
   }, [token]);
 
   const handlePurchase = async (plan: Plan) => {
-    if (!token) return;
+    if (!token && !user?.email) return;
     setPurchasing(true);
     setPurchasingPlan(plan.slug);
     setError('');
@@ -116,6 +159,43 @@ export default function Dashboard() {
       setNewApiKey(data.api_key);
       await fetchKeys();
     } catch (e) {
+      if (isAuthError(e)) {
+        const demoEmail =
+          user?.email?.trim() || `demo+${user?.id ?? 'user'}@example.com`;
+        try {
+          const data = await apiFetch('/purchase', {
+            method: 'POST',
+            body: JSON.stringify({ plan_slug: plan.slug, email: demoEmail }),
+          });
+          const demoKey: ApiKeyItem = {
+            api_key_id: Date.now(),
+            masked: buildMaskedKey(data.api_key),
+            status: 'active',
+            created_at: new Date().toISOString(),
+            plan: { slug: plan.slug, scope: plan.scope, name: plan.name },
+            usage: {
+              month: getMonthKey(),
+              request_count: 0,
+              monthly_quota: plan.monthly_quota,
+              remaining: plan.monthly_quota,
+            },
+            is_demo: true,
+          };
+          const nextKeys = [demoKey, ...loadDemoKeys()];
+          saveDemoKeys(nextKeys);
+          setDemoMode(true);
+          setKeys(nextKeys);
+          setNewApiKey(data.api_key);
+          return;
+        } catch (demoError) {
+          setError(
+            demoError instanceof Error
+              ? demoError.message
+              : 'Something went wrong.'
+          );
+          return;
+        }
+      }
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {
       setPurchasing(false);
@@ -124,6 +204,27 @@ export default function Dashboard() {
   };
 
   const handleAddRequests = async (apiKeyId: number) => {
+    if (demoMode) {
+      setAddRequestsKeyId(apiKeyId);
+      const existing = loadDemoKeys();
+      const updated = existing.map((item) => {
+        if (item.api_key_id !== apiKeyId) return item;
+        const nextQuota = item.usage.monthly_quota + DEMO_REQUESTS_ADDON;
+        const nextRemaining = item.usage.remaining + DEMO_REQUESTS_ADDON;
+        return {
+          ...item,
+          usage: {
+            ...item.usage,
+            monthly_quota: nextQuota,
+            remaining: nextRemaining,
+          },
+        };
+      });
+      saveDemoKeys(updated);
+      setKeys(updated);
+      setAddRequestsKeyId(null);
+      return;
+    }
     if (!token) return;
     setAddRequestsKeyId(apiKeyId);
     setError('');
@@ -135,6 +236,12 @@ export default function Dashboard() {
       });
       fetchKeys();
     } catch (e) {
+      if (isAuthError(e)) {
+        setDemoMode(true);
+        setKeys(loadDemoKeys());
+        setAddRequestsKeyId(null);
+        return;
+      }
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {
       setAddRequestsKeyId(null);
