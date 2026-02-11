@@ -122,7 +122,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f6f3]">
+    <div className="min-h-screen bg-[#fafafa]">
       <Header lastUpdated={lastUpdated} />
 
       <div className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -163,49 +163,49 @@ export default function Home() {
         )}
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-lg border border-[#e9e9e7] p-5 mb-6">
+        <div className="bg-white rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-6">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
               <span
-                className={`absolute top-1/2 -translate-y-1/2 text-muted-foreground ${
+                className={`absolute top-1/2 -translate-y-1/2 text-[#787774] ${
                   isFa ? 'right-3' : 'left-3'
                 }`}
               >
-                <SearchNormal1 size={16} variant="Outline" color="currentColor" />
+                <SearchNormal1 size={18} variant="Outline" color="currentColor" />
               </span>
               <Input
                 type="text"
                 placeholder={isFa ? 'جستجو در ارزها...' : 'Search currencies...'}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`h-9 ${isFa ? 'pr-10 pl-3' : 'pl-10 pr-3'} border-[#e9e9e7] rounded-md text-sm`}
+                className={`h-11 ${isFa ? 'pr-11 pl-4' : 'pl-11 pr-4'} bg-[#f7f6f3] border-0 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#2383e2]/20`}
               />
             </div>
 
             <button
               onClick={handleManualRefresh}
               disabled={isRefreshing}
-              className="flex h-9 items-center gap-1.5 bg-[#191919] text-white px-4 rounded-md hover:bg-[#2f2f2f] transition-all disabled:opacity-50 text-sm font-medium"
+              className="flex h-11 items-center gap-2 bg-[#2383e2] text-white px-5 rounded-xl hover:bg-[#1a6ec7] transition-all disabled:opacity-50 text-sm font-medium shadow-sm"
             >
               <span className={isRefreshing ? 'animate-spin' : ''}>
-                <Refresh size={16} variant="Bold" color="currentColor" />
+                <Refresh size={18} variant="Bold" color="currentColor" />
               </span>
               <span>{isFa ? 'به‌روزرسانی' : 'Refresh'}</span>
             </button>
           </div>
 
-          <div className="flex gap-2 flex-wrap mt-4">
+          <div className="flex gap-2 flex-wrap mt-5">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors flex items-center gap-1.5 font-medium ${
+                className={`px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-2 font-medium ${
                   selectedCategory === category.id
-                    ? 'bg-[#191919] text-white'
+                    ? 'bg-[#2383e2] text-white shadow-sm'
                     : 'bg-[#f7f6f3] text-[#37352f] hover:bg-[#e9e9e7]'
                 }`}
               >
-                <span className="text-base">{category.icon}</span>
+                <span className="text-lg">{category.icon}</span>
                 <span>{isFa ? category.nameFa : category.nameEn}</span>
               </button>
             ))}
@@ -237,33 +237,33 @@ export default function Home() {
         )}
 
         {/* Footer Info */}
-        <div className="mt-8 bg-white rounded-lg border border-[#e9e9e7] p-5">
+        <div className="mt-8 bg-white rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div>
-              <h4 className="font-medium mb-1.5 text-sm">
+              <h4 className="font-medium mb-2 text-sm text-[#37352f]">
                 {isFa ? '🔄 به‌روزرسانی خودکار' : '🔄 Auto refresh'}
               </h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#787774]">
                 {isFa
                   ? 'قیمت‌ها هر ۳۰ ثانیه به‌طور خودکار به‌روز می‌شوند'
                   : 'Rates refresh automatically every 30 seconds.'}
               </p>
             </div>
             <div>
-              <h4 className="font-medium mb-1.5 text-sm">
+              <h4 className="font-medium mb-2 text-sm text-[#37352f]">
                 {isFa ? '📊 داده‌های دقیق' : '📊 Accurate data'}
               </h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#787774]">
                 {isFa
                   ? 'اطلاعات از منابع معتبر بازار ارز و طلا'
                   : 'Aggregated from trusted FX and gold sources.'}
               </p>
             </div>
             <div>
-              <h4 className="font-medium mb-1.5 text-sm">
+              <h4 className="font-medium mb-2 text-sm text-[#37352f]">
                 {isFa ? '⚡ سرعت بالا' : '⚡ Fast performance'}
               </h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#787774]">
                 {isFa
                   ? 'نمایش سریع و بهینه قیمت‌ها در لحظه'
                   : 'Optimized to deliver prices instantly.'}

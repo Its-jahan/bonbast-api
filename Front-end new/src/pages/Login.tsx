@@ -33,15 +33,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f7f6f3] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#fafafa] p-4">
       <div className="w-full max-w-md space-y-4">
         <div className="flex justify-end">
-          <div className="flex items-center gap-0.5 rounded-md bg-white border border-[#e9e9e7] p-0.5">
+          <div className="flex items-center gap-0.5 rounded-xl bg-white shadow-sm p-1">
             <button
               type="button"
               onClick={() => setLanguage('en')}
-              className={`px-3 py-1.5 text-xs font-medium rounded transition ${
-                language === 'en' ? 'bg-[#191919] text-white' : 'text-muted-foreground hover:text-foreground'
+              className={`px-3 py-2 text-xs font-medium rounded-lg transition ${
+                language === 'en' ? 'bg-[#2383e2] text-white' : 'text-[#787774] hover:text-[#37352f]'
               }`}
             >
               EN
@@ -49,15 +49,15 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setLanguage('fa')}
-              className={`px-3 py-1.5 text-xs font-medium rounded transition ${
-                language === 'fa' ? 'bg-[#191919] text-white' : 'text-muted-foreground hover:text-foreground'
+              className={`px-3 py-2 text-xs font-medium rounded-lg transition ${
+                language === 'fa' ? 'bg-[#2383e2] text-white' : 'text-[#787774] hover:text-[#37352f]'
               }`}
             >
               FA
             </button>
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-[#e9e9e7] p-8 space-y-6">
+        <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-8 space-y-6">
           <div className="space-y-2 text-center">
             <h1 className="text-2xl font-semibold text-[#37352f]">{isFa ? 'ورود' : 'Sign in'}</h1>
             <p className="text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ export default function Login() {
             {error && (
               <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
             )}
-            <Button type="submit" disabled={loading} className="h-10 bg-[#191919] hover:bg-[#2f2f2f] text-white rounded-md">
+            <Button type="submit" disabled={loading} className="h-11">
               {loading ? (isFa ? 'در حال ورود...' : 'Signing in...') : isFa ? 'ورود' : 'Sign in'}
             </Button>
           </form>

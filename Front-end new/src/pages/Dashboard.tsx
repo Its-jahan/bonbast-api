@@ -300,26 +300,26 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f6f3]">
+    <div className="min-h-screen bg-[#fafafa]">
       <Header />
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="space-y-1">
             <h1 className="text-xl font-semibold text-[#37352f]">{isFa ? 'داشبورد' : 'Dashboard'}</h1>
-            <p className="text-muted-foreground text-sm">{user?.email}</p>
+            <p className="text-[#787774] text-sm">{user?.email}</p>
             {demoMode && (
-              <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 border border-amber-200">
+              <span className="inline-flex items-center rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 border border-amber-200">
                 {isFa ? 'حالت دمو (احراز هویت غیرفعال)' : 'Demo mode (auth unavailable)'}
               </span>
             )}
           </div>
-          <Button variant="outline" onClick={signOut} className="border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-9 text-sm">
+          <Button variant="outline" onClick={signOut} className="h-10 text-sm">
             {isFa ? 'خروج' : 'Sign out'}
           </Button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20">
+          <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-xl text-sm border border-destructive/20">
             {error}
           </div>
         )}
@@ -336,8 +336,8 @@ export default function Dashboard() {
                 {isFa ? 'در حال بارگذاری...' : 'Loading...'}
               </div>
             ) : keys.length === 0 ? (
-              <Card className="border-[#e9e9e7]">
-                <CardContent className="py-8 text-center text-muted-foreground text-sm">
+              <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.08)] rounded-2xl border-0">
+                <CardContent className="py-8 text-center text-[#787774] text-sm">
                   {isFa
                     ? 'هنوز هیچ کلید API ندارید. یک پلن بخرید تا شروع کنید.'
                     : 'You do not have any API keys yet. Buy a plan to get started.'}
@@ -348,7 +348,7 @@ export default function Dashboard() {
                 {keys.map((k) => {
                   const apiUrl = k.api_url ?? (k.api_key ? buildApiUrl(k.api_key) : undefined);
                   return (
-                    <Card key={k.api_key_id} className="border-[#e9e9e7]">
+                    <Card key={k.api_key_id} className="shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all rounded-2xl border-0">
                       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -497,7 +497,7 @@ export default function Dashboard() {
               {plans.map((plan) => (
                 <Card
                   key={plan.slug}
-                  className="hover:border-primary transition-colors border-[#e9e9e7]"
+                  className="hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all shadow-[0_1px_3px_rgba(0,0,0,0.08)] rounded-2xl border-0"
                 >
                   <CardHeader className="space-y-1.5 pb-3">
                     <CardTitle className="text-sm font-medium">
