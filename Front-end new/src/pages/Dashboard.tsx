@@ -300,62 +300,62 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5]">
+    <div className="min-h-screen bg-[#f7f6f3]">
       <Header />
-      <div className="mx-auto w-full max-w-6xl px-6 py-10">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold">{isFa ? 'داشبورد' : 'Dashboard'}</h1>
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold text-[#37352f]">{isFa ? 'داشبورد' : 'Dashboard'}</h1>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
             {demoMode && (
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+              <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 border border-amber-200">
                 {isFa ? 'حالت دمو (احراز هویت غیرفعال)' : 'Demo mode (auth unavailable)'}
               </span>
             )}
           </div>
-          <Button variant="outline" onClick={signOut} className="border-[#e5e5e5] bg-white shadow-sm">
+          <Button variant="outline" onClick={signOut} className="border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-9 text-sm">
             {isFa ? 'خروج' : 'Sign out'}
           </Button>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
+          <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20">
             {error}
           </div>
         )}
 
-        <div className="space-y-12">
+        <div className="space-y-8">
           {/* API Keys */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{isFa ? 'کلیدهای API من' : 'My API Keys'}</h2>
+              <h2 className="text-base font-semibold text-[#37352f]">{isFa ? 'کلیدهای API من' : 'My API Keys'}</h2>
             </div>
             {loading ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="h-5 w-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 {isFa ? 'در حال بارگذاری...' : 'Loading...'}
               </div>
             ) : keys.length === 0 ? (
-              <Card className="shadow-sm">
-                <CardContent className="py-10 text-center text-muted-foreground">
+              <Card className="border-[#e9e9e7]">
+                <CardContent className="py-8 text-center text-muted-foreground text-sm">
                   {isFa
                     ? 'هنوز هیچ کلید API ندارید. یک پلن بخرید تا شروع کنید.'
                     : 'You do not have any API keys yet. Buy a plan to get started.'}
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {keys.map((k) => {
                   const apiUrl = k.api_url ?? (k.api_key ? buildApiUrl(k.api_key) : undefined);
                   return (
-                    <Card key={k.api_key_id} className="shadow-sm">
-                      <CardHeader className="flex flex-row items-start justify-between gap-4">
+                    <Card key={k.api_key_id} className="border-[#e9e9e7]">
+                      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-primary">
-                              <KeySquare size={18} variant="Bold" color="currentColor" />
+                              <KeySquare size={16} variant="Bold" color="currentColor" />
                             </span>
-                            <CardTitle className="text-base">
+                            <CardTitle className="text-sm font-medium">
                               {(SCOPE_LABELS[k.plan.scope]?.[isFa ? 'fa' : 'en']) || k.plan.name}
                             </CardTitle>
                           </div>
@@ -364,19 +364,19 @@ export default function Dashboard() {
                           </p>
                         </div>
                         {apiUrl && (
-                          <div className="flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-xs text-muted-foreground">
-                            <Link2 size={14} variant="Bold" color="currentColor" />
+                          <div className="flex items-center gap-1.5 rounded-md border border-[#e9e9e7] bg-[#f7f6f3] px-2 py-1 text-xs text-muted-foreground">
+                            <Link2 size={12} variant="Bold" color="currentColor" />
                             <span>{isFa ? 'لینک API' : 'API link'}</span>
                           </div>
                         )}
                       </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                          <p className="text-xs font-semibold text-muted-foreground">
+                      <CardContent className="space-y-4">
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-muted-foreground">
                             {isFa ? 'کلید API' : 'API Key'}
                           </p>
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <code className="flex-1 rounded-lg border border-[#e5e5e5] bg-[#f7f7f5] px-3 py-2 text-xs break-all font-mono" dir="ltr">
+                            <code className="flex-1 rounded-md border border-[#e9e9e7] bg-[#f7f6f3] px-2.5 py-2 text-xs break-all font-mono" dir="ltr">
                               {k.api_key ?? k.masked}
                             </code>
                             <Button
@@ -384,10 +384,14 @@ export default function Dashboard() {
                               size="sm"
                               onClick={() => handleCopy(k.api_key ?? '', `key-${k.api_key_id}`)}
                               disabled={!k.api_key}
-                              className="gap-1 border-[#e5e5e5] bg-white shadow-sm"
+                              className="gap-1 border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-8 text-xs"
                               type="button"
                             >
-                              <Copy size={14} variant="Bold" color="currentColor" />
+                              {copiedToken === `key-${k.api_key_id}` ? (
+                                <CopySuccess size={14} variant="Bold" color="currentColor" />
+                              ) : (
+                                <Copy size={14} variant="Bold" color="currentColor" />
+                              )}
                               {copiedToken === `key-${k.api_key_id}`
                                 ? isFa
                                   ? 'کپی شد'
@@ -400,22 +404,26 @@ export default function Dashboard() {
                         </div>
 
                         {apiUrl && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-semibold text-muted-foreground">
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-medium text-muted-foreground">
                               {isFa ? 'آدرس API' : 'API URL'}
                             </p>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                              <code className="flex-1 rounded-lg border border-[#e5e5e5] bg-[#f7f7f5] px-3 py-2 text-xs break-all font-mono" dir="ltr">
+                              <code className="flex-1 rounded-md border border-[#e9e9e7] bg-[#f7f6f3] px-2.5 py-2 text-xs break-all font-mono" dir="ltr">
                                 {apiUrl}
                               </code>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleCopy(apiUrl, `url-inline-${k.api_key_id}`)}
-                                className="gap-1 border-[#e5e5e5] bg-white shadow-sm"
+                                className="gap-1 border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-8 text-xs"
                                 type="button"
                               >
-                                <Copy size={14} variant="Bold" color="currentColor" />
+                                {copiedToken === `url-inline-${k.api_key_id}` ? (
+                                  <CopySuccess size={14} variant="Bold" color="currentColor" />
+                                ) : (
+                                  <Copy size={14} variant="Bold" color="currentColor" />
+                                )}
                                 {copiedToken === `url-inline-${k.api_key_id}`
                                   ? isFa
                                     ? 'کپی شد'
@@ -428,8 +436,8 @@ export default function Dashboard() {
                           </div>
                         )}
 
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
                             <span>
                               {isFa ? 'مصرف ماهانه' : 'Monthly usage'} ({k.usage.month})
                             </span>
@@ -438,8 +446,8 @@ export default function Dashboard() {
                               {k.usage.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-primary transition-all"
                                 style={{
@@ -459,14 +467,14 @@ export default function Dashboard() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full border-[#e5e5e5] bg-white shadow-sm"
+                          className="w-full border-[#e9e9e7] bg-white hover:bg-[#f7f6f3] h-8 text-xs"
                           onClick={() => handleAddRequests(k.api_key_id)}
                           disabled={addRequestsKeyId === k.api_key_id}
                         >
                           {addRequestsKeyId === k.api_key_id ? (
-                            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <AddCircle size={16} variant="Bold" color="currentColor" />
+                            <AddCircle size={14} variant="Bold" color="currentColor" />
                           )}
                           <span className="ml-1">
                             {isFa ? 'خرید ۵۰۰۰ درخواست (دمو)' : 'Buy 5,000 requests (demo)'}
@@ -483,19 +491,19 @@ export default function Dashboard() {
           {/* Purchase new plan */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{isFa ? 'خرید کلید API جدید' : 'Buy a New API Key'}</h2>
+              <h2 className="text-base font-semibold text-[#37352f]">{isFa ? 'خرید کلید API جدید' : 'Buy a New API Key'}</h2>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {plans.map((plan) => (
                 <Card
                   key={plan.slug}
-                  className="hover:border-primary transition-colors shadow-sm"
+                  className="hover:border-primary transition-colors border-[#e9e9e7]"
                 >
-                  <CardHeader className="space-y-2">
-                    <CardTitle className="text-base">
+                  <CardHeader className="space-y-1.5 pb-3">
+                    <CardTitle className="text-sm font-medium">
                       {(SCOPE_LABELS[plan.scope]?.[isFa ? 'fa' : 'en']) || plan.name}
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {plan.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
                       {isFa ? 'درخواست/ماه' : 'requests/month'}
                     </p>
@@ -506,7 +514,7 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <Button
-                      className="w-full"
+                      className="w-full h-8 text-xs"
                       variant="outline"
                       size="sm"
                       type="button"
@@ -517,7 +525,7 @@ export default function Dashboard() {
                       disabled={purchasing && purchasingPlan === plan.slug}
                     >
                       {purchasing && purchasingPlan === plan.slug ? (
-                        <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : null}
                       <span>
                         {purchasing && purchasingPlan === plan.slug
@@ -547,18 +555,18 @@ export default function Dashboard() {
             }
           }}
         >
-          <DialogContent>
+          <DialogContent className="border-[#e9e9e7]">
             <DialogHeader>
-              <DialogTitle>{isFa ? 'کلید API شما' : 'Your API Key'}</DialogTitle>
+              <DialogTitle className="text-base">{isFa ? 'کلید API شما' : 'Your API Key'}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
               {isFa
                 ? 'این کلید فقط یک‌بار نمایش داده می‌شود. همین حالا کپی کنید.'
                 : 'This key is shown only once. Copy it now.'}
             </p>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex gap-2">
-                <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono" dir="ltr">
+                <code className="flex-1 p-2.5 bg-[#f7f6f3] border border-[#e9e9e7] rounded-md text-xs break-all font-mono" dir="ltr">
                   {newApiKey}
                 </code>
                 <Button
@@ -566,6 +574,7 @@ export default function Dashboard() {
                   size="icon"
                   onClick={() => handleCopy(newApiKey ?? '', 'dialog-key')}
                   type="button"
+                  className="h-9 w-9 border-[#e9e9e7]"
                 >
                   {copiedToken === 'dialog-key' ? (
                     <CopySuccess size={16} variant="Bold" color="currentColor" />
@@ -576,7 +585,7 @@ export default function Dashboard() {
               </div>
               {newApiUrl && (
                 <div className="flex gap-2">
-                  <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono" dir="ltr">
+                  <code className="flex-1 p-2.5 bg-[#f7f6f3] border border-[#e9e9e7] rounded-md text-xs break-all font-mono" dir="ltr">
                     {newApiUrl}
                   </code>
                   <Button
@@ -584,6 +593,7 @@ export default function Dashboard() {
                     size="icon"
                     onClick={() => handleCopy(newApiUrl, 'dialog-url')}
                     type="button"
+                    className="h-9 w-9 border-[#e9e9e7]"
                   >
                     {copiedToken === 'dialog-url' ? (
                       <CopySuccess size={16} variant="Bold" color="currentColor" />
@@ -599,6 +609,7 @@ export default function Dashboard() {
                 setNewApiKey(null);
                 setNewApiUrl(null);
               }}
+              className="h-9 bg-[#191919] hover:bg-[#2f2f2f]"
             >
               {isFa ? 'متوجه شدم' : 'Got it'}
             </Button>
