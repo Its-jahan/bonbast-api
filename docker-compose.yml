@@ -13,7 +13,11 @@ services:
       - API_KEY_PEPPER_PATH=/data/api_key_pepper
       # JWT secret از Supabase Dashboard > Project Settings > API
       - SUPABASE_JWT_SECRET=1195c07a-24e0-4e27-802b-6161f714aa9f
-      # - ADMIN_TOKEN=change-me
+      # Optional: sync data to Supabase
+      # - SUPABASE_URL=https://shxhgzryhljbocnnhzwn.supabase.co
+      # - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoeGhnenJ5aGxqYm9jbm5oenduIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDc0OTM4OSwiZXhwIjoyMDg2MzI1Mzg5fQ.giCQwrj4lyXRfAXa9cfNNrGnPDzkBAUrbiIpnVU4w1c
+      # - PUBLIC_API_BASE_URL=http://31.59.105.156/api/prices
+      # - ADMIN_TOKEN=Z7CRb_kW1fM-XPk3MZWUqaiIzmUBl59-4A0B1aNOPJk
     shm_size: '2gb'
     volumes:
       - ./data:/data

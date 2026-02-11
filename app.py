@@ -8,7 +8,7 @@ import threading
 import time
 import logging
 
-from api_manager import init_api_manager, require_metered_api_key
+from api_manager import init_api_manager, require_metered_api_key, auth_api_key_value, increment_usage_for_key
 
 app = Flask(__name__)
 init_api_manager(app)
@@ -155,6 +155,24 @@ def get_prices_v1():
         "data": filtered_data,
         "last_updated": LATEST_PRICES.get("last_updated"),
         "status": LATEST_PRICES.get("status"),
+    })
+
+
+@app.route('/v1/key/<api_key>/prices', methods=['GET'])
+def get_prices_by_key(api_key: str):
+    auth_row = auth_api_key_value(api_key)
+    if not auth_row:
+        return jsonify({"error": "Invalid or inactive API key."}), 401
+    usage = increment_usage_for_key(api_key_id=int(auth_row["api_key_id"]))
+    if not usage.get("ok"):
+        return jsonify({"error": usage.get("error"), "usage": usage}), 429
+    scope = auth_row.get("scope") or "all"
+    filtered_data = _filter_prices_by_scope(LATEST_PRICES.get("data", {}), scope)
+    return jsonify({
+        "data": filtered_data,
+        "last_updated": LATEST_PRICES.get("last_updated"),
+        "status": LATEST_PRICES.get("status"),
+        "usage": usage,
     })
 
 @app.route('/health', methods=['GET'])

@@ -20,6 +20,8 @@ const SCOPE_LABELS: Record<string, string> = {
 
 type ApiKeyItem = {
   api_key_id: number;
+  api_key?: string;
+  api_url?: string;
   masked: string;
   status: string;
   created_at: string;
@@ -55,11 +57,23 @@ const buildMaskedKey = (apiKey: string) => {
 
 const getMonthKey = () => new Date().toISOString().slice(0, 7);
 
+const getApiBaseUrl = () => {
+  if (typeof window === 'undefined') return '/api';
+  return `${window.location.origin}/api`;
+};
+
+const buildApiUrl = (apiKey: string) => `${getApiBaseUrl()}/v1/key/${apiKey}/prices`;
+
 const loadDemoKeys = (): ApiKeyItem[] => {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(DEMO_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as ApiKeyItem[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ApiKeyItem[];
+    return parsed.map((item) => ({
+      ...item,
+      api_url: item.api_url ?? (item.api_key ? buildApiUrl(item.api_key) : undefined),
+    }));
   } catch {
     return [];
   }
@@ -103,8 +117,9 @@ export default function Dashboard() {
   const [purchasing, setPurchasing] = useState(false);
   const [purchasingPlan, setPurchasingPlan] = useState<string | null>(null);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
+  const [newApiUrl, setNewApiUrl] = useState<string | null>(null);
   const [addRequestsKeyId, setAddRequestsKeyId] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [demoMode, setDemoMode] = useState(false);
 
   const token = session?.access_token;
@@ -157,6 +172,7 @@ export default function Dashboard() {
         token,
       });
       setNewApiKey(data.api_key);
+      setNewApiUrl(data.api_url ?? buildApiUrl(data.api_key));
       await fetchKeys();
     } catch (e) {
       if (isAuthError(e)) {
@@ -167,8 +183,11 @@ export default function Dashboard() {
             method: 'POST',
             body: JSON.stringify({ plan_slug: plan.slug, email: demoEmail }),
           });
+          const apiUrl = data.api_url ?? buildApiUrl(data.api_key);
           const demoKey: ApiKeyItem = {
             api_key_id: Date.now(),
+            api_key: data.api_key,
+            api_url: apiUrl,
             masked: buildMaskedKey(data.api_key),
             status: 'active',
             created_at: new Date().toISOString(),
@@ -186,6 +205,7 @@ export default function Dashboard() {
           setDemoMode(true);
           setKeys(nextKeys);
           setNewApiKey(data.api_key);
+          setNewApiUrl(apiUrl);
           return;
         } catch (demoError) {
           setError(
@@ -248,22 +268,30 @@ export default function Dashboard() {
     }
   };
 
-  const copyKey = () => {
-    if (newApiKey) {
-      navigator.clipboard.writeText(newApiKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async (value: string, token: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(null), 2000);
+    } catch {
+      setError('Copy failed. Please try again.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-slate-50">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
+      <div className="mx-auto w-full max-w-6xl px-6 py-10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
+            {demoMode && (
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                Demo mode (auth unavailable)
+              </span>
+            )}
           </div>
           <Button variant="outline" onClick={signOut}>
             Sign out
@@ -276,125 +304,187 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* API Keys */}
-        <section className="mb-10">
-          <h2 className="text-lg font-semibold mb-4">My API Keys</h2>
-          {loading ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Loading...
+        <div className="space-y-12">
+          {/* API Keys */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">My API Keys</h2>
             </div>
-          ) : keys.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                You do not have any API keys yet. Buy a plan to get started.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {keys.map((k) => (
-                <Card key={k.api_key_id}>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Key className="w-5 h-5 text-primary" />
-                      <CardTitle className="text-base">
-                        {SCOPE_LABELS[k.plan.scope] || k.plan.name}
-                      </CardTitle>
-                    </div>
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {k.masked}
-                    </span>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Monthly usage ({k.usage.month})
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary transition-all"
-                            style={{
-                              width: `${Math.min(
-                                100,
-                                (k.usage.request_count / k.usage.monthly_quota) * 100
-                              )}%`,
-                            }}
-                          />
+            {loading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Loading...
+              </div>
+            ) : keys.length === 0 ? (
+              <Card className="shadow-sm">
+                <CardContent className="py-10 text-center text-muted-foreground">
+                  You do not have any API keys yet. Buy a plan to get started.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
+                {keys.map((k) => {
+                  const apiUrl = k.api_url ?? (k.api_key ? buildApiUrl(k.api_key) : undefined);
+                  return (
+                  <Card key={k.api_key_id} className="shadow-sm">
+                    <CardHeader className="flex flex-row items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Key className="w-5 h-5 text-primary" />
+                          <CardTitle className="text-base">
+                            {SCOPE_LABELS[k.plan.scope] || k.plan.name}
+                          </CardTitle>
                         </div>
-                        <span className="text-sm font-medium">
-                          {k.usage.request_count.toLocaleString('en-US')} /{' '}
-                          {k.usage.monthly_quota.toLocaleString('en-US')}
-                        </span>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {k.masked}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {k.usage.remaining.toLocaleString('en-US')} requests remaining
-                      </p>
-                    </div>
+                      {apiUrl && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopy(apiUrl, `url-${k.api_key_id}`)}
+                        >
+                          {copiedToken === `url-${k.api_key_id}` ? 'Copied URL' : 'Copy URL'}
+                        </Button>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          API Key
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono">
+                            {k.api_key ?? k.masked}
+                          </code>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopy(k.api_key ?? '', `key-${k.api_key_id}`)}
+                            disabled={!k.api_key}
+                          >
+                            {copiedToken === `key-${k.api_key_id}` ? 'Copied' : 'Copy'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {apiUrl && (
+                        <div className="space-y-2">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                            API URL
+                          </p>
+                          <code className="block rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono">
+                            {apiUrl}
+                          </code>
+                        </div>
+                      )}
+
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Monthly usage ({k.usage.month})
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{
+                                width: `${Math.min(
+                                  100,
+                                  (k.usage.request_count / k.usage.monthly_quota) * 100
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium tabular-nums">
+                            {k.usage.request_count.toLocaleString('en-US')} /{' '}
+                            {k.usage.monthly_quota.toLocaleString('en-US')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {k.usage.remaining.toLocaleString('en-US')} requests remaining
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleAddRequests(k.api_key_id)}
+                        disabled={addRequestsKeyId === k.api_key_id}
+                      >
+                        {addRequestsKeyId === k.api_key_id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
+                        <span className="ml-1">Buy 5,000 requests (demo)</span>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Purchase new plan */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Buy a New API Key</h2>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {plans.map((plan) => (
+                <Card
+                  key={plan.slug}
+                  className="hover:border-primary transition-colors shadow-sm"
+                >
+                  <CardHeader className="space-y-2">
+                    <CardTitle className="text-base">
+                      {SCOPE_LABELS[plan.scope] || plan.name}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {plan.monthly_quota.toLocaleString('en-US')} requests/month
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {plan.rpm_limit.toLocaleString('en-US')} rpm limit
+                    </p>
+                  </CardHeader>
+                  <CardContent>
                     <Button
+                      className="w-full"
                       variant="outline"
                       size="sm"
-                      onClick={() => handleAddRequests(k.api_key_id)}
-                      disabled={addRequestsKeyId === k.api_key_id}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handlePurchase(plan);
+                      }}
+                      disabled={purchasing && purchasingPlan === plan.slug}
                     >
-                      {addRequestsKeyId === k.api_key_id ? (
+                      {purchasing && purchasingPlan === plan.slug ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Plus className="w-4 h-4" />
-                      )}
-                      <span className="ml-1">Buy 5,000 requests (demo)</span>
+                      ) : null}
+                      <span>
+                        {purchasing && purchasingPlan === plan.slug ? 'Processing...' : 'Buy (demo)'}
+                      </span>
                     </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          )}
-        </section>
-
-        {/* Purchase new plan */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4">Buy a New API Key</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {plans.map((plan) => (
-              <Card
-                key={plan.slug}
-                className="hover:border-primary transition-colors"
-              >
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {SCOPE_LABELS[plan.scope] || plan.name}
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {plan.monthly_quota.toLocaleString('en-US')} requests/month
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handlePurchase(plan);
-                    }}
-                    disabled={purchasing && purchasingPlan === plan.slug}
-                  >
-                    {purchasing && purchasingPlan === plan.slug ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : null}
-                    <span>{purchasing && purchasingPlan === plan.slug ? 'Processing...' : 'Buy (demo)'}</span>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
+          </section>
+        </div>
 
         {/* New API Key dialog */}
         <Dialog
           open={!!newApiKey}
-          onOpenChange={(open) => !open && setNewApiKey(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setNewApiKey(null);
+              setNewApiUrl(null);
+              setCopiedToken(null);
+            }
+          }}
         >
           <DialogContent>
             <DialogHeader>
@@ -403,15 +493,50 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">
               This key is shown only once. Copy it now.
             </p>
-            <div className="flex gap-2">
-              <code className="flex-1 p-3 bg-muted rounded-lg text-sm break-all font-mono">
-                {newApiKey}
-              </code>
-              <Button variant="outline" size="icon" onClick={copyKey}>
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </Button>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono">
+                  {newApiKey}
+                </code>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleCopy(newApiKey ?? '', 'dialog-key')}
+                >
+                  {copiedToken === 'dialog-key' ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+              {newApiUrl && (
+                <div className="flex gap-2">
+                  <code className="flex-1 p-3 bg-muted rounded-lg text-xs break-all font-mono">
+                    {newApiUrl}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopy(newApiUrl, 'dialog-url')}
+                  >
+                    {copiedToken === 'dialog-url' ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
-            <Button onClick={() => setNewApiKey(null)}>Got it</Button>
+            <Button
+              onClick={() => {
+                setNewApiKey(null);
+                setNewApiUrl(null);
+              }}
+            >
+              Got it
+            </Button>
           </DialogContent>
         </Dialog>
       </div>

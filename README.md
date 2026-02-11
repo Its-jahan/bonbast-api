@@ -17,6 +17,7 @@ docker-compose up -d --build
 
 - عمومی (بدون کلید): `GET /api/prices`
 - پولی/متری (با کلید، فیلتر بر اساس scope): `GET /api/v1/prices` با هدر `x-api-key`
+- لینک اختصاصی هر کلید: `GET /api/v1/key/<api_key>/prices`
 - لیست پلن‌ها: `GET /api/plans` (شامل scope: all, currency, crypto, gold)
 - صدور کلید (legacy): `POST /api/purchase` با بدنه `{"email":"...","plan_slug":"..."}`
 
@@ -34,13 +35,17 @@ docker-compose up -d --build
 - `API_DB_PATH=/data/api_manager.db`
 - `API_KEY_PEPPER_PATH=/data/api_key_pepper`
 - `SUPABASE_JWT_SECRET`: از Supabase Dashboard > Project Settings > API > JWT Secret کپی کنید (برای اندپوینت‌های `/me/*`)
+- (اختیاری) همگام‌سازی با Supabase:
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `PUBLIC_API_BASE_URL` (مثل `https://example.com/api`)
+
+ساخت جدول‌های Supabase (در SQL Editor) از این فایل:
+- `supabase/schema.sql`
 
 برای اندپوینت ادمین:
 - `ADMIN_TOKEN` را ست کنید و سپس `GET /api/admin/keys` را با هدر `x-admin-token` صدا بزنید.
 
-## فونت IranyekanX
+## فونت Inter
 
-فرانت از فونت `IRANYekanX` استفاده می‌کند (به‌صورت پیش‌فرض از CDN).
-اگر می‌خواهید self-host کنید، فایل‌ها را در این مسیرها قرار دهید:
-- `frontend/public/fonts/IranYekanX-Regular.woff2`
-- `frontend/public/fonts/IranYekanX-Bold.woff2`
+فرانت از فونت `Inter` (Google Fonts) استفاده می‌کند.

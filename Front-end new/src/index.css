@@ -407,7 +407,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-family: var(--font-sans);
-    direction: rtl;
+    direction: ltr;
   }
 
   h1 {
