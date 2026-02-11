@@ -3,6 +3,7 @@ import { Bitcoin, Coin, Danger, DollarCircle, Refresh, SearchNormal1, TrendUp } 
 import { Header } from '../components/Header';
 import { CurrencyCard } from '../components/CurrencyCard';
 import { StatCard } from '../components/StatCard';
+import { Input } from '../components/ui/input';
 import { currencies, categories } from '../data/currencies';
 import { ApiResponse, CurrencyData } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -172,21 +173,19 @@ export default function Home() {
               >
                 <SearchNormal1 size={20} variant="Outline" color="currentColor" />
               </span>
-              <input
+              <Input
                 type="text"
                 placeholder={isFa ? 'جستجو در ارزها...' : 'Search currencies...'}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                  isFa ? 'pr-12 pl-4' : 'pl-12 pr-4'
-                }`}
+                className={isFa ? 'pr-11 pl-4' : 'pl-11 pr-4'}
               />
             </div>
-            
+
             <button
               onClick={handleManualRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-lg hover:bg-black/90 transition-all disabled:opacity-50"
+              className="flex h-11 items-center gap-2 bg-black text-white px-6 rounded-lg hover:bg-black/90 transition-all disabled:opacity-50"
             >
               <span className={isRefreshing ? 'animate-spin' : ''}>
                 <Refresh size={20} variant="Bold" color="currentColor" />
@@ -195,12 +194,12 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="flex gap-3 flex-wrap mt-4">
+          <div className="flex gap-3 flex-wrap mt-5">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-full text-sm transition-colors flex items-center gap-2 ${
                   selectedCategory === category.id
                     ? 'bg-black text-white shadow-sm'
                     : 'bg-muted hover:bg-muted/80'

@@ -28,7 +28,7 @@ export function Header({ lastUpdated }: HeaderProps) {
     <header className="bg-black text-white sticky top-0 z-50 shadow-sm">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center text-black">
             <Chart2 size={20} variant="Bold" color="currentColor" />
           </div>
           <div>
@@ -43,19 +43,19 @@ export function Header({ lastUpdated }: HeaderProps) {
 
         <div className="flex items-center gap-3">
           {lastUpdated && (
-            <div className="hidden sm:flex items-center gap-2 bg-white/10 px-3 py-2 rounded-lg text-xs text-white/80">
+            <div className="hidden sm:flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs text-black shadow-sm">
               <Clock size={16} variant="Bold" color="currentColor" />
               <span>
                 {isFa ? 'آخرین بروزرسانی' : 'Last update'}: {displayLastUpdated}
               </span>
             </div>
           )}
-          <div className="flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1">
+          <div className="flex items-center gap-2 rounded-lg border border-white/20 bg-white px-2 py-1 text-black shadow-sm">
             <button
               type="button"
               onClick={() => setLanguage('en')}
               className={`px-2 py-1 text-xs font-semibold rounded-md transition ${
-                language === 'en' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                language === 'en' ? 'bg-black text-white' : 'text-black/70 hover:text-black'
               }`}
             >
               EN
@@ -64,7 +64,7 @@ export function Header({ lastUpdated }: HeaderProps) {
               type="button"
               onClick={() => setLanguage('fa')}
               className={`px-2 py-1 text-xs font-semibold rounded-md transition ${
-                language === 'fa' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+                language === 'fa' ? 'bg-black text-white' : 'text-black/70 hover:text-black'
               }`}
             >
               FA
@@ -73,7 +73,7 @@ export function Header({ lastUpdated }: HeaderProps) {
           {user ? (
             <Link
               to="/dashboard"
-              className="flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-medium text-white/90 hover:text-white transition"
+              className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black shadow-sm hover:bg-white/90 transition"
             >
               <Category size={16} variant="Bold" color="currentColor" />
               <span>{isFa ? 'داشبورد' : 'Dashboard'}</span>
@@ -82,14 +82,14 @@ export function Header({ lastUpdated }: HeaderProps) {
             <>
               <Link
                 to="/login"
-                className="flex items-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-medium text-white/90 hover:text-white transition"
+                className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black shadow-sm hover:bg-white/90 transition"
               >
                 <Login size={16} variant="Bold" color="currentColor" />
                 <span>{isFa ? 'ورود' : 'Sign in'}</span>
               </Link>
               <Link
                 to="/register"
-                className="flex items-center gap-2 rounded-lg bg-white text-black px-3 py-2 text-xs font-semibold hover:bg-white/90 transition"
+                className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black shadow-sm hover:bg-white/90 transition"
               >
                 <UserAdd size={16} variant="Bold" color="currentColor" />
                 <span>{isFa ? 'ثبت‌نام' : 'Sign up'}</span>

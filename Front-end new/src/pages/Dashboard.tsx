@@ -304,7 +304,7 @@ export default function Dashboard() {
       <Header />
       <div className="mx-auto w-full max-w-6xl px-6 py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <h1 className="text-2xl font-semibold">{isFa ? 'داشبورد' : 'Dashboard'}</h1>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
             {demoMode && (
@@ -313,7 +313,7 @@ export default function Dashboard() {
               </span>
             )}
           </div>
-          <Button variant="outline" onClick={signOut}>
+          <Button variant="outline" onClick={signOut} className="border-[#e5e5e5] bg-white shadow-sm">
             {isFa ? 'خروج' : 'Sign out'}
           </Button>
         </div>
@@ -348,125 +348,133 @@ export default function Dashboard() {
                 {keys.map((k) => {
                   const apiUrl = k.api_url ?? (k.api_key ? buildApiUrl(k.api_key) : undefined);
                   return (
-                  <Card key={k.api_key_id} className="shadow-sm">
-                    <CardHeader className="flex flex-row items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary">
-                            <KeySquare size={18} variant="Bold" color="currentColor" />
-                          </span>
-                          <CardTitle className="text-base">
-                            {(SCOPE_LABELS[k.plan.scope]?.[isFa ? 'fa' : 'en']) || k.plan.name}
-                          </CardTitle>
+                    <Card key={k.api_key_id} className="shadow-sm">
+                      <CardHeader className="flex flex-row items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-primary">
+                              <KeySquare size={18} variant="Bold" color="currentColor" />
+                            </span>
+                            <CardTitle className="text-base">
+                              {(SCOPE_LABELS[k.plan.scope]?.[isFa ? 'fa' : 'en']) || k.plan.name}
+                            </CardTitle>
+                          </div>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {k.masked}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {k.masked}
-                        </p>
-                      </div>
-                      {apiUrl && (
+                        {apiUrl && (
+                          <div className="flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-xs text-muted-foreground">
+                            <Link2 size={14} variant="Bold" color="currentColor" />
+                            <span>{isFa ? 'لینک API' : 'API link'}</span>
+                          </div>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-muted-foreground">
+                            {isFa ? 'کلید API' : 'API Key'}
+                          </p>
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <code className="flex-1 rounded-lg border border-[#e5e5e5] bg-[#f7f7f5] px-3 py-2 text-xs break-all font-mono" dir="ltr">
+                              {k.api_key ?? k.masked}
+                            </code>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopy(k.api_key ?? '', `key-${k.api_key_id}`)}
+                              disabled={!k.api_key}
+                              className="gap-1 border-[#e5e5e5] bg-white shadow-sm"
+                              type="button"
+                            >
+                              <Copy size={14} variant="Bold" color="currentColor" />
+                              {copiedToken === `key-${k.api_key_id}`
+                                ? isFa
+                                  ? 'کپی شد'
+                                  : 'Copied'
+                                : isFa
+                                  ? 'کپی'
+                                  : 'Copy'}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {apiUrl && (
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-muted-foreground">
+                              {isFa ? 'آدرس API' : 'API URL'}
+                            </p>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <code className="flex-1 rounded-lg border border-[#e5e5e5] bg-[#f7f7f5] px-3 py-2 text-xs break-all font-mono" dir="ltr">
+                                {apiUrl}
+                              </code>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCopy(apiUrl, `url-inline-${k.api_key_id}`)}
+                                className="gap-1 border-[#e5e5e5] bg-white shadow-sm"
+                                type="button"
+                              >
+                                <Copy size={14} variant="Bold" color="currentColor" />
+                                {copiedToken === `url-inline-${k.api_key_id}`
+                                  ? isFa
+                                    ? 'کپی شد'
+                                    : 'Copied'
+                                  : isFa
+                                    ? 'کپی'
+                                    : 'Copy'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <span>
+                              {isFa ? 'مصرف ماهانه' : 'Monthly usage'} ({k.usage.month})
+                            </span>
+                            <span className="font-medium tabular-nums text-foreground">
+                              {k.usage.request_count.toLocaleString(isFa ? 'fa-IR' : 'en-US')} /{' '}
+                              {k.usage.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary transition-all"
+                                style={{
+                                  width: `${Math.min(
+                                    100,
+                                    (k.usage.request_count / k.usage.monthly_quota) * 100
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {k.usage.remaining.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
+                            {isFa ? 'درخواست باقی‌مانده' : 'requests remaining'}
+                          </p>
+                        </div>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCopy(apiUrl, `url-${k.api_key_id}`)}
-                          className="gap-1"
-                          type="button"
+                          className="w-full border-[#e5e5e5] bg-white shadow-sm"
+                          onClick={() => handleAddRequests(k.api_key_id)}
+                          disabled={addRequestsKeyId === k.api_key_id}
                         >
-                          <Link2 size={14} variant="Bold" color="currentColor" />
-                          {copiedToken === `url-${k.api_key_id}`
-                            ? isFa
-                              ? 'کپی شد'
-                              : 'Copied URL'
-                            : isFa
-                              ? 'کپی آدرس'
-                              : 'Copy URL'}
-                        </Button>
-                      )}
-                    </CardHeader>
-                    <CardContent className="space-y-5">
-                      <div className="space-y-2">
-                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {isFa ? 'کلید API' : 'API Key'}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono" dir="ltr">
-                            {k.api_key ?? k.masked}
-                          </code>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCopy(k.api_key ?? '', `key-${k.api_key_id}`)}
-                            disabled={!k.api_key}
-                            className="gap-1"
-                            type="button"
-                          >
-                            <Copy size={14} variant="Bold" color="currentColor" />
-                            {copiedToken === `key-${k.api_key_id}`
-                              ? isFa
-                                ? 'کپی شد'
-                                : 'Copied'
-                              : isFa
-                                ? 'کپی'
-                                : 'Copy'}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {apiUrl && (
-                        <div className="space-y-2">
-                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                            {isFa ? 'آدرس API' : 'API URL'}
-                          </p>
-                          <code className="block rounded-lg bg-muted px-3 py-2 text-xs break-all font-mono" dir="ltr">
-                            {apiUrl}
-                          </code>
-                        </div>
-                      )}
-
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {isFa ? 'مصرف ماهانه' : 'Monthly usage'} ({k.usage.month})
-                        </p>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary transition-all"
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  (k.usage.request_count / k.usage.monthly_quota) * 100
-                                )}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium tabular-nums">
-                            {k.usage.request_count.toLocaleString(isFa ? 'fa-IR' : 'en-US')} /{' '}
-                            {k.usage.monthly_quota.toLocaleString(isFa ? 'fa-IR' : 'en-US')}
+                          {addRequestsKeyId === k.api_key_id ? (
+                            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <AddCircle size={16} variant="Bold" color="currentColor" />
+                          )}
+                          <span className="ml-1">
+                            {isFa ? 'خرید ۵۰۰۰ درخواست (دمو)' : 'Buy 5,000 requests (demo)'}
                           </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {k.usage.remaining.toLocaleString(isFa ? 'fa-IR' : 'en-US')}{' '}
-                          {isFa ? 'درخواست باقی‌مانده' : 'requests remaining'}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => handleAddRequests(k.api_key_id)}
-                        disabled={addRequestsKeyId === k.api_key_id}
-                      >
-                        {addRequestsKeyId === k.api_key_id ? (
-                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <AddCircle size={16} variant="Bold" color="currentColor" />
-                        )}
-                        <span className="ml-1">
-                          {isFa ? 'خرید ۵۰۰۰ درخواست (دمو)' : 'Buy 5,000 requests (demo)'}
-                        </span>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
                 })}
               </div>
             )}

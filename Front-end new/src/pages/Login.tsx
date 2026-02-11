@@ -32,13 +32,13 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f7f7f5] p-4">
-      <div className="w-full max-w-md space-y-4">
+      <div className="w-full max-w-sm space-y-4">
         <div className="flex justify-end">
-          <div className="flex items-center gap-1 rounded-lg border border-[#e5e5e5] bg-white p-1">
+          <div className="flex items-center gap-1 rounded-full border border-[#e5e5e5] bg-white p-1 shadow-sm">
             <button
               type="button"
               onClick={() => setLanguage('en')}
-              className={`px-2 py-1 text-xs font-semibold rounded-md ${
+              className={`px-3 py-1 text-xs font-semibold rounded-full ${
                 language === 'en' ? 'bg-black text-white' : 'text-muted-foreground'
               }`}
             >
@@ -47,7 +47,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setLanguage('fa')}
-              className={`px-2 py-1 text-xs font-semibold rounded-md ${
+              className={`px-3 py-1 text-xs font-semibold rounded-full ${
                 language === 'fa' ? 'bg-black text-white' : 'text-muted-foreground'
               }`}
             >
@@ -55,31 +55,46 @@ export default function Login() {
             </button>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#e5e5e5] p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-center mb-6">{isFa ? 'ورود' : 'Sign in'}</h1>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="bg-white rounded-2xl border border-[#e5e5e5] p-8 shadow-sm space-y-6">
+          <div className="space-y-1 text-center">
+            <h1 className="text-2xl font-semibold">{isFa ? 'ورود' : 'Sign in'}</h1>
+            <p className="text-sm text-muted-foreground">
+              {isFa ? 'حساب کاربری خود را وارد کنید' : 'Access your API dashboard.'}
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div>
-              <Label htmlFor="email">{isFa ? 'ایمیل' : 'Email'}</Label>
+              <Label
+                htmlFor="email"
+                className={isFa ? 'text-xs font-semibold text-muted-foreground' : 'text-xs font-semibold uppercase tracking-wide text-muted-foreground'}
+              >
+                {isFa ? 'ایمیل' : 'Email'}
+              </Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1"
+                className="mt-2"
                 placeholder="you@example.com"
                 dir="ltr"
               />
             </div>
             <div>
-              <Label htmlFor="password">{isFa ? 'رمز عبور' : 'Password'}</Label>
+              <Label
+                htmlFor="password"
+                className={isFa ? 'text-xs font-semibold text-muted-foreground' : 'text-xs font-semibold uppercase tracking-wide text-muted-foreground'}
+              >
+                {isFa ? 'رمز عبور' : 'Password'}
+              </Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="mt-1"
+                className="mt-2"
               />
             </div>
             {error && (
@@ -89,7 +104,7 @@ export default function Login() {
               {loading ? (isFa ? 'در حال ورود...' : 'Signing in...') : isFa ? 'ورود' : 'Sign in'}
             </Button>
           </form>
-          <p className="text-center text-sm text-muted-foreground mt-4">
+          <p className="text-center text-sm text-muted-foreground">
             {isFa ? 'حساب ندارید؟' : "Don't have an account?"}{' '}
             <Link to="/register" className="text-primary font-medium hover:underline">
               {isFa ? 'ثبت‌نام' : 'Sign up'}
