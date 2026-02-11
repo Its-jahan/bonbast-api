@@ -1,0 +1,95 @@
+# 🚀 Quick Deploy Commands for Server
+
+## On Your Server (31.59.105.156)
+
+### Quick Deploy (Easiest)
+cd ~/bonbast-api
+chmod +x deploy.sh
+./deploy.sh
+
+### Manual Deploy
+cd ~/bonbast-api
+sudo docker-compose down
+sudo docker rmi bonbast-api-frontend
+sudo docker-compose build --no-cache frontend
+sudo docker-compose up -d
+
+### Check Status
+sudo docker-compose ps
+sudo docker-compose logs frontend --tail=50
+sudo docker-compose logs api --tail=50
+
+### View Live Logs
+sudo docker-compose logs -f frontend
+sudo docker-compose logs -f api
+
+### Restart Services
+sudo docker-compose restart frontend
+sudo docker-compose restart api
+sudo docker-compose restart
+
+### Stop/Start
+sudo docker-compose down
+sudo docker-compose up -d
+
+## Test After Deploy
+
+### In Browser
+http://31.59.105.156
+
+### Test API
+curl http://31.59.105.156/api/prices
+
+### Test with API Key (after getting one from dashboard)
+curl -H "x-api-key: YOUR_KEY" http://31.59.105.156/api/v1/prices
+
+## Troubleshooting
+
+### Clear browser cache
+Ctrl + Shift + R (hard refresh)
+
+### Check if containers are running
+sudo docker-compose ps
+
+### View all logs
+sudo docker-compose logs --tail=100
+
+### Restart everything
+sudo docker-compose restart
+
+### Rebuild from scratch
+sudo docker-compose down
+sudo docker system prune -a
+sudo docker-compose up -d --build
+
+## Files to Upload to Server
+
+If you need to upload files from local to server:
+
+### Using SCP
+scp deploy.sh root@31.59.105.156:~/bonbast-api/
+scp -r "Front-end new" root@31.59.105.156:~/bonbast-api/
+
+### Using Git (if you have repo)
+cd ~/bonbast-api
+git pull
+./deploy.sh
+
+## Expected Results
+
+✅ Frontend at: http://31.59.105.156
+✅ API at: http://31.59.105.156/api/prices
+✅ New UI with Notion-style design
+✅ All features working
+
+## Quick Test Flow
+
+1. Open http://31.59.105.156
+2. Click "ثبت نام" (Sign up)
+3. Register: ali@test.com / 123456
+4. Click "فروشگاه" (Shop)
+5. Buy any plan
+6. See API key in Dashboard
+7. Copy and test API key
+
+Done! 🎉
